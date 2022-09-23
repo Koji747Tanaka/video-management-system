@@ -1,25 +1,38 @@
 <template>
     <el-config-provider :size="size" :z-index="zIndex">
-        <app />
-        <h1>Hello World This is Login Page.</h1>
+        <el-card>
+            <h2>動画管理サイトログイン</h2>
+            <el-form class="login-form">
+                <el-form-item>
+                    <el-input v-model="username" placeholder="username"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-input v-model="password" type="password" placeholder="password"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button>ログイン</el-button>
+                </el-form-item>
+            </el-form>
+            <span>Here is username: {{username}}</span><br>
+            <span>Here is password: {{password}}</span>
+
+        </el-card>
     </el-config-provider>
+
+
 </template>
 
-<script>
+<script setup>
+import { ref } from 'vue'
+const username = ref('')
+const password = ref('')
 
 
-// import { defineComponent } from 'vue'
-// import { ElConfigProvider } from 'element-plus'
 
-// export default defineComponent({
-//     components: {
-//         ElConfigProvider,
-//     },
-//     setup() {
-//         return {
-//             zIndex: 3000,
-//             size: 'small',
-//         }
-//     },
-// })
 </script>
+
+<style>
+.login-form {
+    width: 290px;
+}
+</style>

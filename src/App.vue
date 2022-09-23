@@ -14,6 +14,8 @@ import Login from './components/Login.vue'
   <main>
     <Login />
   </main>
+
+
 </template>
 
 <style scoped>
@@ -21,7 +23,13 @@ header {
   line-height: 1.5;
 }
 
-/* #app {
+main {
+  justify-content: center;
+  align-items: center;
+  display: flex;
+}
+
+#app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -29,7 +37,7 @@ header {
   color: #2c3e50;
   margin-top: 30px;
   margin: 30px;
-} */
+}
 
 #firstContainer {
   border: 1px solid #eee;

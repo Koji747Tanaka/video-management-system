@@ -1,4 +1,23 @@
 services:
+  express:
+    container_name: video-express
+
+    image: video-express:latest
+
+    build:
+      context: ./express
+      dockerfile: Dockerfile.express
+
+    ports:
+      - "13000:3000"
+
+    volumes:
+      - video_express_node:/app/node_modules
+      - ./express:/app
+
+    networks:
+      - default
+
   dev:
     container_name: video-dev
 
@@ -9,11 +28,17 @@ services:
       dockerfile: Dockerfile
 
     ports:
-      - "13000:5173"
+      - "15173:5173"
 
     volumes:
       - video_dev_node_modules:/app/node_modules
       - .:/app
+    depends_on:
+      - express
+
+    networks:
+      - default
 
 volumes:
   video_dev_node_modules:
+  video_express_node:
