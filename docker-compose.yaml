@@ -15,6 +15,10 @@ services:
       - video_express_node:/app/node_modules
       - ./express:/app
 
+    tty: true
+
+    stdin_open: true
+
     networks:
       - default
 
@@ -35,6 +39,10 @@ services:
       - .:/app
     depends_on:
       - express
+
+    tty: true
+
+    stdin_open: true
 
     networks:
       - default
