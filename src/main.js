@@ -5,4 +5,4 @@ import App from './App.vue'
 import './assets/main.css'
 
 const app = createApp(App)
-app.use(ElementPlus, { size: 'small', zIndex: 3000 }).mount('#app')
+app.use(ElementPlus).mount('#app')

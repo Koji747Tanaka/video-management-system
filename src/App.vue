@@ -1,5 +1,6 @@
 <script setup>
 import Login from './components/Login.vue'
+import Register from './components/Register.vue'
 
 </script>
 
@@ -10,9 +11,8 @@ import Login from './components/Login.vue'
     </el-header>
   </el-container>
 
-
   <main>
-    <Login />
+    <Register />
   </main>
 
 
