@@ -12,7 +12,7 @@ import Register from './components/Register.vue'
   </el-container>
 
   <main>
-    <Register />
+    <Login />
   </main>
 
 

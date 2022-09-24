@@ -18,7 +18,7 @@ app.use(bodyParser.urlencoded({
 
 app.use(cors(corsOptions));
 
-var whitelist = ['http://localhost:5173', 'http://localhost:5173/login']
+var whitelist = ['http://localhost:5173', 'http://localhost:15173']
 var corsOptions = {
     origin: function (origin, callback) {
         if (whitelist.indexOf(origin) !== -1) {
@@ -48,25 +48,49 @@ app.get("/register", (req, res) => {
     res.send("Here is register page");
 });
 
+app.get("/login", function (req, res) {
+    res.send("Here is login page");
+});
+
 app.post("/register", (req, res) => {
     console.log("req body username is : " + req.body.username);
     console.log("req body password is : " + req.body.password);
 
     res.send("Express register received the request");
 
-    // const newUser = new User({
-    //     username: req.body.username,
-    //     password: md5(req.body.password)
-    // });
-    // newUser.save((err) => {
-    //     if (err) {
-    //         console.log(err);
-    //     } else {
-    //         res.send("congrats! new user is added.")
-    //     }
-    // });
-
+    const newUser = new User({
+        username: req.body.username,
+        password: md5(req.body.password)
+    });
+    newUser.save((err) => {
+        if (err) {
+            console.log(err);
+        } else {
+            res.send("congrats! new user is added.")
+        }
+    });
 })
+
+app.post("/login", function (req, res) {
+    const userName = req.body.username;
+    const password = md5(req.body.password);
+
+    User.findOne({ username: userName }, function (err, foundUser) {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            if (foundUser) {
+                if (foundUser.password === password) {
+                    res.send("Matched");
+                }
+            }
+            else {
+                res.send("Not Matched");
+            }
+        }
+    });
+});
 
 app.listen(3000, function () {
     console.log(`Server is running on port ${PORT}`);
