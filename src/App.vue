@@ -1,18 +1,21 @@
 <script setup>
-import Login from './components/Login.vue'
-import Register from './components/Register.vue'
 
 </script>
 
 <template>
+
   <el-container id="firstContainer">
-    <el-header class="logo">
-      <img src="./img/chibalogoside.jpeg" alt="Chiba University Logo" class="logo" width="200" height="60">
-    </el-header>
+    <el-menu id="top-menu">
+      <img src="./img/chibalogoside.jpeg" alt="Chiba University Logo" class="logo" width="200" height="50">
+
+    </el-menu>
+
+    <!-- <el-switch v-model="value" size="middle" active-text="English" inactive-text=" 日本語" /> -->
+
   </el-container>
 
   <main>
-    <Login />
+    <router-view />
   </main>
 
 
@@ -29,6 +32,11 @@ main {
   display: flex;
 }
 
+#top-menu {
+  display: flex;
+  border: none;
+}
+
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -42,5 +50,12 @@ main {
 #firstContainer {
   border: 1px solid #eee;
   margin: 0%;
+}
+
+
+
+.logo {
+  float: left;
+
 }
 </style>

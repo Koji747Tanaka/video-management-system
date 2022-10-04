@@ -38,8 +38,8 @@ mongoose.connect("mongodb://localhost:27017/videoUserDB", {
 });
 
 const userSchema = new mongoose.Schema({
-    username: String,
-    password: String
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
 });
 
 const User = new mongoose.model("User", userSchema);
@@ -52,23 +52,31 @@ app.get("/login", function (req, res) {
     res.send("Here is login page");
 });
 
-app.post("/register", (req, res) => {
+app.post("/register", async (req, res) => {
     console.log("req body username is : " + req.body.username);
     console.log("req body password is : " + req.body.password);
 
-    res.send("Express register received the request");
+    // res.send("Express register received the request");
 
     const newUser = new User({
         username: req.body.username,
         password: md5(req.body.password)
     });
-    newUser.save((err) => {
-        if (err) {
-            console.log(err);
+    newUser.save((error) => {
+        if (error) {
+            if (error.code === 11000) {
+                //Duplicate key
+                return res.json({ status: 'error', error: 'Username already in use.' });
+            }
+            throw error;
+
         } else {
             res.send("congrats! new user is added.")
         }
     });
+
+
+    // res.json({ status: 'ok' });
 })
 
 app.post("/login", function (req, res) {
