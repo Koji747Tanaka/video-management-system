@@ -1,38 +1,15 @@
 import { createApp } from 'vue'
-import { createStore } from 'vuex'
+import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
 import router from './router'
 import App from './App.vue'
 import './assets/main.css'
-
+// import { userAuthStore } from "./store/auth.store"
 const app = createApp(App)
+const pinia = createPinia()
 
-const store = createStore({
-    state() {
-        return {
-            isLogin: false,
-            userId: ""
-        }
-
-    },
-    mutations: {
-        auth(state, user) {
-            state.isLogin = true;
-            state.userId = user;
-        }
-    },
-    actions: {
-        fetch(context, user) {
-            context.commit('auth', user);
-        }
-    },
-    modules: {
-    }
-})
-
-
-app.use(store)
+app.use(pinia)
 app.use(router)
 app.use(ElementPlus).mount('#app')
 
-export default store;
+export default app;

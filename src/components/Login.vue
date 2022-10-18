@@ -36,10 +36,13 @@
 <script setup>
 import { ref } from 'vue'
 import axios from "axios"
+import { userAuthStore } from '../store/auth.store.js'
+import router from '../router';
 
 const API_URL = "http://localhost:3000/";
 const username = ref('')
 const password = ref('')
+const authStore = userAuthStore();
 
 const onClickSubmit = async () => {
     const article = {
@@ -47,16 +50,18 @@ const onClickSubmit = async () => {
         password: password.value
     };
 
-    await axios.post(API_URL + "login", article).then((res) => {
-        // console.log("Response is here: " + res.data);
-        if (res.data === "Matched") {
-            console.log("Great response is : " + res.data);
-
-            // $store.dispatch("fetch", this.username);
-            // $router.push('/video');
+    const user = await axios.post(API_URL + "login", article).then((res) => {
+        if (res.data.validation == true) {
+            authStore.auth();
+            console.log("authStore is Login", authStore.isLogin)
+            console.log("Great response is : ", res.data);
+            console.log(document.cookie);
+            router.push("/video");
+            return res.data;
         }
         else {
-            console.log("Response is here: " + res.data);
+            console.log("Response is here: ", res.data.validation)
+            return res.data;
         }
     });
 }

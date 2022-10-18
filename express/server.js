@@ -3,19 +3,22 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const md5 = require("md5");
 const cors = require("cors");
+const cookieParser = require('cookie-parser');
+
+const ffmpeg = require('./ffmpeg');
+
 
 const PORT = 3000;
 const app = express();
 
+app.use(cookieParser());
 app.use(bodyParser.json());
 // app.use(express.json());// body-parser settings
 app.use(bodyParser.urlencoded({
     extended: true
 }));
 
-
 // app.use(express.static("public"));
-
 app.use(cors(corsOptions));
 
 var whitelist = ['http://localhost:5173', 'http://localhost:15173']
@@ -29,12 +32,33 @@ var corsOptions = {
     }
 }
 
-app.get("/", (req, res) => {
-    res.send("Here is express");
+app.get('/', (req, res) => {
+    res.cookie('name1', 'value1', {
+        maxAge: 60000,
+        httpOnly: false
+    })
+
+    res.cookie('name2', 'value2', {
+        httpOnly: true
+    })
+
+    // res.cookie('name3', 'value3', {
+    //     domain: '.wakuwakubank.com',
+    //     path: '/cookie',
+    //     secure: true
+    // })
+
+    res.json({})
 })
 
-mongoose.connect("mongodb://localhost:27017/videoUserDB", {
-    useNewUrlParser: true
+// mongoose.connect('mongodb://root:password@mongo:27017');
+// mongoose.connect("mongodb://root:password@mongo:27017", {
+mongoose.connect("mongodb://mongodb:27017", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    user: "root",
+    pass: "password",
+    dbName: "videoUserDB",
 });
 
 const userSchema = new mongoose.Schema({
@@ -49,8 +73,17 @@ app.get("/register", (req, res) => {
 });
 
 app.get("/login", function (req, res) {
+    res.cookie('name1', 'value1', {
+        maxAge: 60000,
+        httpOnly: false
+    })
+    res.json({})
     res.send("Here is login page");
 });
+
+app.get("/video", function (req, res) {
+
+})
 
 app.post("/register", async (req, res) => {
     console.log("req body username is : " + req.body.username);
@@ -90,16 +123,24 @@ app.post("/login", function (req, res) {
         else {
             if (foundUser) {
                 if (foundUser.password === password) {
-                    res.send("Matched");
+                    let resUser = {
+                        validation: true,
+                        _id: foundUser._id,
+                        userName: foundUser.username,
+                    }
+                    res.send(resUser);
                 }
             }
             else {
-                res.send("Not Matched");
+                let resUser = {
+                    validation: false
+                }
+                res.send(resUser);
             }
         }
     });
 });
 
-app.listen(3000, function () {
+app.listen(PORT, function () {
     console.log(`Server is running on port ${PORT}`);
 });

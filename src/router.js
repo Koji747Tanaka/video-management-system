@@ -2,7 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Register from "./components/Register.vue";
 import Login from "./components/Login.vue";
 import Video from "./components/VideoManagement.vue";
-import store from "./main.js"
+import { userAuthStore } from "./store/auth.store.js";
+
+
 
 const routes = [
     {
@@ -32,9 +34,11 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-    //https://ky-yk-d.hatenablog.com/entry/2018/07/07/203000
     if (to.matched.some(record => record.meta.requiresAuth)) {
-        if (!store.state.isLogin) {
+        const authStore = userAuthStore();
+        // console.log("user auth store is here ", authStore.$id)
+        console.log("user auth store is here ", authStore.isLogin)
+        if (!authStore.isLogin) {
             // 認証されていない時、認証画面へ遷移
             next({
                 path: '/login',
