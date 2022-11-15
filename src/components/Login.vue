@@ -23,7 +23,9 @@
                 <p>------------------------------------</p>
                 <p>アカウントを作成する場合はサインアップへ</p>
                 <div class="margin-top-little">
-                    <router-link to="/register">サインアップ</router-link>
+                    <router-link to="/register">サインアップ </router-link>
+
+                    <router-link to="/loginAgain"> 再ログイン</router-link>
                 </div>
             </div>
 
@@ -44,23 +46,25 @@ const username = ref('')
 const password = ref('')
 const authStore = userAuthStore();
 
-const onClickSubmit = async () => {
+const onClickSubmit = () => {
     const article = {
         username: username.value,
         password: password.value
     };
 
-    const user = await axios.post(API_URL + "login", article).then((res) => {
+    axios.post(API_URL + "login", article).then((res) => {
         if (res.data.validation == true) {
             authStore.auth();
             console.log("authStore is Login", authStore.isLogin)
             console.log("Great response is : ", res.data);
-            console.log(document.cookie);
+            console.log("cookie is here", document.cookie);
+            console.log("Token is here;", res.data.token)
             router.push("/video");
             return res.data;
         }
         else {
             console.log("Response is here: ", res.data.validation)
+            console.log("Response is here: ", res.data)
             return res.data;
         }
     });

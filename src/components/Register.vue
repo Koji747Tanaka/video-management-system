@@ -39,6 +39,10 @@
 <script setup>
 import { ref } from 'vue'
 import axios from "axios"
+import { userAuthStore } from '../store/auth.store.js'
+import router from '../router';
+
+const authStore = userAuthStore();
 
 const username = ref('')
 const password = ref('')
@@ -50,7 +54,17 @@ const onClickSubmit = () => {
     };
     axios.post("http://localhost:3000/register", article)
         .then((res) => {
-            console.log(res.data)
+            if (res.data.validation == true) {
+                authStore.auth();
+                console.log("authStore is Login", authStore.isLogin)
+                router.push("/video");
+                return res.data;
+            }
+            else {
+                console.log("Response is here: ", res.data.validation)
+                console.log("Response is here: ", res.data)
+                return res.data;
+            }
         });
 
 }

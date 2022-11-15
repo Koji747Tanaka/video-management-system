@@ -1,24 +1,55 @@
+require('dotenv').config();
 const express = require("express");
+const fileUpload = require('express-fileupload');
+
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const md5 = require("md5");
 const cors = require("cors");
 const cookieParser = require('cookie-parser');
+const jwt = require("jsonwebtoken");
+////////////////////////////////
+const session = require('express-session');
+const passport = require('passport');
+const passportLocalMongoose = require('passport-local-mongoose');
+
+
+
+//////////////////////
+
+var fs = require('fs');
+var dirReceived = './received';
+var dirTranscoded = './transcoded';
+
+const mkNonDir = (dir) => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir);
+    }
+}
+mkNonDir(dirReceived);
+mkNonDir(dirTranscoded);
 
 const ffmpeg = require('./ffmpeg');
-
 
 const PORT = 3000;
 const app = express();
 
-app.use(cookieParser());
+//////////////////////////////////////
+app.use(session({
+    secret: 'keyboard cat',
+    resave: false,
+    saveUninitialized: true,
+}))
+app.use(passport.authenticate('session'));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(bodyParser.json());
-// app.use(express.json());// body-parser settings
 app.use(bodyParser.urlencoded({
     extended: true
 }));
 
-// app.use(express.static("public"));
 app.use(cors(corsOptions));
 
 var whitelist = ['http://localhost:5173', 'http://localhost:15173']
@@ -27,31 +58,11 @@ var corsOptions = {
         if (whitelist.indexOf(origin) !== -1) {
             callback(null, true)
         } else {
-            callback(new Error('Not allowed by CORS'))
+            callback(new Error('Not allowed by CORS'));
         }
     }
 }
 
-app.get('/', (req, res) => {
-    res.cookie('name1', 'value1', {
-        maxAge: 60000,
-        httpOnly: false
-    })
-
-    res.cookie('name2', 'value2', {
-        httpOnly: true
-    })
-
-    // res.cookie('name3', 'value3', {
-    //     domain: '.wakuwakubank.com',
-    //     path: '/cookie',
-    //     secure: true
-    // })
-
-    res.json({})
-})
-
-// mongoose.connect('mongodb://root:password@mongo:27017');
 // mongoose.connect("mongodb://root:password@mongo:27017", {
 mongoose.connect("mongodb://mongodb:27017", {
     useNewUrlParser: true,
@@ -62,84 +73,193 @@ mongoose.connect("mongodb://mongodb:27017", {
 });
 
 const userSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    // username: String,
+    // password: String,
 });
+
+userSchema.plugin(passportLocalMongoose);
 
 const User = new mongoose.model("User", userSchema);
 
+///////////////////////////////
+passport.use(User.createStrategy());
+// passport.serializeUser(User.serializeUser());
+// passport.deserializeUser(User.deserializeUser());
+
+passport.serializeUser(function (user, done) {
+    done(null, user);
+});
+
+passport.deserializeUser(function (user, done) {
+    done(null, user);
+});
+
+////////////////////////////
+
 app.get("/register", (req, res) => {
-    res.send("Here is register page");
 });
-
 app.get("/login", function (req, res) {
-    res.cookie('name1', 'value1', {
-        maxAge: 60000,
-        httpOnly: false
-    })
-    res.json({})
-    res.send("Here is login page");
 });
-
-app.get("/video", function (req, res) {
-
+app.get("/convert", function (req, res) {
 })
 
-app.post("/register", async (req, res) => {
+app.post("/register", (req, res) => {
     console.log("req body username is : " + req.body.username);
     console.log("req body password is : " + req.body.password);
 
-    // res.send("Express register received the request");
+    User.register({ username: req.body.username }, req.body.password, function (err, user) {
 
-    const newUser = new User({
-        username: req.body.username,
-        password: md5(req.body.password)
-    });
-    newUser.save((error) => {
-        if (error) {
-            if (error.code === 11000) {
-                //Duplicate key
-                return res.json({ status: 'error', error: 'Username already in use.' });
-            }
-            throw error;
-
+        if (err) {
+            console.log("Error in User registration", err);
         } else {
-            res.send("congrats! new user is added.")
+            passport.authenticate("local")(req, res, function () {
+                let resUser = {
+                    validation: true,
+                }
+                res.send(resUser);
+            })
         }
+    })
+    // const newUser = new User({
+    //     username: req.body.username,
+    //     password: md5(req.body.password)
+    // });
+    // newUser.save((error) => {
+    //     if (error) {
+    //         if (error.code === 11000) {
+    //             //Duplicate key
+    //             return res.json({ status: 'error', error: 'Username already in use.' });
+    //         }
+    //         throw error;
+    //     } else {
+    //         res.send("congrats! new user is added.")
+    //     }
+    // });
+})
+app.post("/login", function (req, res) {
+    const user = new User({
+        username: req.body.user,
+        password: req.body.password
     });
 
+    req.login(user, function (err) {
+        if (err) {
+            console.log(err);
+        } else {
+            passport.authenticate("local")(req, res, function (err) {
+                let resUser = {
+                    validation: true,
+                }
+                res.send(resUser);
+                if (err) {
+                    console.log("not login ")
+                }
+                // res.send("login authenticated")
+            }
+            );
+        }
+    })
 
-    // res.json({ status: 'ok' });
-})
+    // const userName = req.body.username;
+    // const password = md5(req.body.password);
 
-app.post("/login", function (req, res) {
-    const userName = req.body.username;
-    const password = md5(req.body.password);
+    // User.findOne({ username: userName }, function (err, foundUser) {
+    //     if (err) {
+    //         console.log(err);
+    //     }
+    //     else {
+    //         if (foundUser) {
+    //             if (foundUser.password === password) {
+    //                 const user = { name: foundUser.username }
+    //                 const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET)
 
-    User.findOne({ username: userName }, function (err, foundUser) {
+    // let resUser = {
+    //     validation: true,
+    //     _id: foundUser._id,
+    //     userName: foundUser.username,
+    //     token: accessToken
+    // }
+
+    // res.send(resUser);
+    //             }
+    //         }
+    //         else {
+    //             let resUser = {
+    //                 validation: false
+    //             }
+    //             res.send(resUser);
+    //         }
+    //     }
+    // });
+});
+
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization']
+    const token = authHeader
+    if (token == null) return res.sendStatus(401)
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            return res.sendStatus(403)
+        }
+        req.user = decoded
+        next();
+    })
+}
+
+app.get('/posts', authenticateToken, (req, res) => {
+    console.log(req.user.name);
+
+    User.findOne({ username: req.user.name }, function (err, foundUser) {
         if (err) {
             console.log(err);
         }
         else {
             if (foundUser) {
-                if (foundUser.password === password) {
-                    let resUser = {
-                        validation: true,
-                        _id: foundUser._id,
-                        userName: foundUser.username,
-                    }
-                    res.send(resUser);
+                let resUser = {
+                    validation: true,
+                    _id: foundUser._id,
+                    userName: foundUser.username,
                 }
+                console.log("congrats!!")
+                res.send("you are logged in.")
             }
             else {
                 let resUser = {
                     validation: false
                 }
-                res.send(resUser);
+                res.send("you are rejected")
             }
         }
     });
+
 });
+
+
+
+
+app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
+    const receivedName = Object.keys(req.files)[0];
+    const receivedFile = req.files[receivedName];
+
+    fs.writeFile(`./received/${receivedName}`, receivedFile["data"], function (err) {
+        if (err) {
+            return console.log("Err in write file ", err);
+        }
+        console.log("The file was saved!");
+    });
+
+    ffmpeg(`./received/${receivedName}`)
+        .videoCodec('libx264')
+        .audioCodec('libmp3lame')
+        .size('320x?')
+        .on('error', function (err) {
+            console.log("Err happened", err)
+        })
+        .on('end', function () {
+            console.log('Process finished.')
+        })
+        .save(`./transcoded/${receivedName}`)
+})
 
 app.listen(PORT, function () {
     console.log(`Server is running on port ${PORT}`);
