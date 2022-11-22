@@ -43,7 +43,6 @@ const onClickSubmit = () => {
     axios.post(API_URL + "login", article).then((res) => {
         if (res.data.validation == true) {
             // authStore.auth();
-            // console.log("authStore is Login", authStore.isLogin)
             // console.log("Great response is : ", res.data);
             // console.log("cookie is here", document.cookie);
             // console.log("Token is here;", res.data.token)

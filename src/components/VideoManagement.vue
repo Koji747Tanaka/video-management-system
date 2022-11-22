@@ -1,10 +1,10 @@
 <template>
     <div>
-
+        <button @click="logout()">LOG OUT</button>
+    </div>
+    <div>
         <input ref="file" v-on:change="handleFileUpload()" type="file">
         <button @click="sendFile()">Convert</button>
-
-
     </div>
 
 
@@ -13,6 +13,7 @@
 <script setup>
 import { ref } from 'vue'
 import axios from "axios"
+import router from '../router';
 
 const file = ref('')
 
@@ -39,8 +40,14 @@ const sendFile = async () => {
         .then((res) => {
             console.log(res.data)
         });
+}
 
-
+const logout = () => {
+    axios.get("http://localhost:3000/logout").then(res => {
+        if (res.data) {
+            router.push("/login");
+        }
+    });
 }
 
 </script>

@@ -10,6 +10,7 @@ services:
       - 3000:3000
     volumes:
       - video_express_node:/app/node_modules
+      - transcoded_videos:/app/transcoded
       - ./express:/app
     tty: true
     stdin_open: true
@@ -86,5 +87,6 @@ networks:
 volumes:
   video_dev_node_modules:
   video_express_node:
+  transcoded_videos:
 
 

@@ -47,6 +47,8 @@ const password = ref('')
 const authStore = userAuthStore();
 
 const onClickSubmit = () => {
+
+
     const article = {
         username: username.value,
         password: password.value

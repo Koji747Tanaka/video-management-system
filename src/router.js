@@ -29,7 +29,7 @@ const routes = [
         name: 'video',
         component: Video,
         meta: {
-            requiresAuth: false, //true to require auth
+            requiresAuth: true, //true to require auth
         }
     }
 ]

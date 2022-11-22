@@ -12,7 +12,7 @@ const jwt = require("jsonwebtoken");
 const session = require('express-session');
 const passport = require('passport');
 const passportLocalMongoose = require('passport-local-mongoose');
-
+var scopackager = require('simple-scorm-packager');
 
 
 //////////////////////
@@ -33,22 +33,23 @@ const ffmpeg = require('./ffmpeg');
 
 const PORT = 3000;
 const app = express();
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
 
+app.use(cookieParser());
 //////////////////////////////////////
 app.use(session({
     secret: 'keyboard cat',
     resave: false,
     saveUninitialized: true,
 }))
-app.use(passport.authenticate('session'));
 
+// app.use(passport.authenticate('session'));
 app.use(passport.initialize());
 app.use(passport.session());
 
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({
-    extended: true
-}));
 
 app.use(cors(corsOptions));
 
@@ -83,16 +84,18 @@ const User = new mongoose.model("User", userSchema);
 
 ///////////////////////////////
 passport.use(User.createStrategy());
-// passport.serializeUser(User.serializeUser());
-// passport.deserializeUser(User.deserializeUser());
-
 passport.serializeUser(function (user, done) {
-    done(null, user);
+    console.log("user id is here ", user);
+    done(null, user.id);
 });
 
-passport.deserializeUser(function (user, done) {
-    done(null, user);
+passport.deserializeUser(function (id, done) {
+    console.log("deserialise working");
+    User.findById(id, function (err, user) {
+        done(err, user);
+    });
 });
+
 
 ////////////////////////////
 
@@ -101,6 +104,16 @@ app.get("/register", (req, res) => {
 app.get("/login", function (req, res) {
 });
 app.get("/convert", function (req, res) {
+})
+
+app.get("/logout", function (req, res) {
+    console.log("req in serialise ", req.cookies.session);
+    req.logout(function (err) {
+        console.log("log out ", req.cookies);
+        if (err) { return next(err); } else {
+            res.send(true)
+        }
+    });
 })
 
 app.post("/register", (req, res) => {
@@ -120,22 +133,8 @@ app.post("/register", (req, res) => {
             })
         }
     })
-    // const newUser = new User({
-    //     username: req.body.username,
-    //     password: md5(req.body.password)
-    // });
-    // newUser.save((error) => {
-    //     if (error) {
-    //         if (error.code === 11000) {
-    //             //Duplicate key
-    //             return res.json({ status: 'error', error: 'Username already in use.' });
-    //         }
-    //         throw error;
-    //     } else {
-    //         res.send("congrats! new user is added.")
-    //     }
-    // });
 })
+
 app.post("/login", function (req, res) {
     const user = new User({
         username: req.body.user,
@@ -151,114 +150,58 @@ app.post("/login", function (req, res) {
                     validation: true,
                 }
                 res.send(resUser);
-                if (err) {
-                    console.log("not login ")
-                }
                 // res.send("login authenticated")
             }
             );
         }
     })
-
-    // const userName = req.body.username;
-    // const password = md5(req.body.password);
-
-    // User.findOne({ username: userName }, function (err, foundUser) {
-    //     if (err) {
-    //         console.log(err);
-    //     }
-    //     else {
-    //         if (foundUser) {
-    //             if (foundUser.password === password) {
-    //                 const user = { name: foundUser.username }
-    //                 const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET)
-
-    // let resUser = {
-    //     validation: true,
-    //     _id: foundUser._id,
-    //     userName: foundUser.username,
-    //     token: accessToken
-    // }
-
-    // res.send(resUser);
-    //             }
-    //         }
-    //         else {
-    //             let resUser = {
-    //                 validation: false
-    //             }
-    //             res.send(resUser);
-    //         }
-    //     }
-    // });
 });
-
-function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization']
-    const token = authHeader
-    if (token == null) return res.sendStatus(401)
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-        if (err) {
-            return res.sendStatus(403)
-        }
-        req.user = decoded
-        next();
-    })
-}
-
-app.get('/posts', authenticateToken, (req, res) => {
-    console.log(req.user.name);
-
-    User.findOne({ username: req.user.name }, function (err, foundUser) {
-        if (err) {
-            console.log(err);
-        }
-        else {
-            if (foundUser) {
-                let resUser = {
-                    validation: true,
-                    _id: foundUser._id,
-                    userName: foundUser.username,
-                }
-                console.log("congrats!!")
-                res.send("you are logged in.")
-            }
-            else {
-                let resUser = {
-                    validation: false
-                }
-                res.send("you are rejected")
-            }
-        }
-    });
-
-});
-
-
 
 
 app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
     const receivedName = Object.keys(req.files)[0];
+    const noExName = receivedName.substring(0, receivedName.indexOf("."));
+
     const receivedFile = req.files[receivedName];
+    var transcodedSeg = `./transcoded/${noExName}`;
+    mkNonDir(transcodedSeg);
+    console.log({ transcodedSeg });
 
     fs.writeFile(`./received/${receivedName}`, receivedFile["data"], function (err) {
         if (err) {
             return console.log("Err in write file ", err);
         }
-        console.log("The file was saved!");
+        console.log("The file was saved!", receivedName);
     });
 
     ffmpeg(`./received/${receivedName}`)
-        .videoCodec('libx264')
-        .audioCodec('libmp3lame')
-        .size('320x?')
-        .on('error', function (err) {
-            console.log("Err happened", err)
-        })
-        .on('end', function () {
-            console.log('Process finished.')
-        })
-        .save(`./transcoded/${receivedName}`)
+        .audioCodec('libopus')
+        .audioBitrate(96)
+        .output(`${transcodedSeg}/${receivedName}.m3u8`)
+        .run()
+
+    ///Scorm package は別でダウンロード
+    scopackager({
+        version: '2004 4th Edition',
+        organization: 'Chiba University',
+        title: `${noExName}`,
+        language: 'fr-FR',
+        identifier: '00',
+        masteryScore: 80,
+        startingPage: 'index.html',
+        source: `${transcodedSeg}`,
+        package: {
+            version: "0.0.1",
+            zip: true,
+            outputFolder: './scormPackages'
+        }
+    }, function (msg) {
+        console.log(msg);
+    });
+
+    // .save(`./transcoded/${receivedName}`)
+
+
 })
 
 app.listen(PORT, function () {
