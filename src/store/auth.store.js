@@ -4,8 +4,9 @@ export const userAuthStore = defineStore({
     id: 'auth',
     state: () => {
         return {
-            isLogin: true,
+            isLogin: false,
             user: null,
+            JWT: null
         }
     },
     getters: {
@@ -16,6 +17,10 @@ export const userAuthStore = defineStore({
             this.isLogin = true;
             console.log("Authentication is now passed.");
             // state.user = user;
+        },
+
+        setJWT(JWT) {
+            this.JWT = JWT;
         },
 
         setUser(user) {

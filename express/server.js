@@ -1,7 +1,6 @@
 require('dotenv').config();
 const express = require("express");
 const fileUpload = require('express-fileupload');
-
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const md5 = require("md5");
@@ -11,10 +10,16 @@ const jwt = require("jsonwebtoken");
 ////////////////////////////////
 const session = require('express-session');
 const passport = require('passport');
-const passportLocalMongoose = require('passport-local-mongoose');
+const LocalStrategy = require('passport-local');
+const cookieSession = require("cookie-session");
+// const passportLocalMongoose = require('passport-local-mongoose');
 var scopackager = require('simple-scorm-packager');
+var flash = require('connect-flash');
 
+const SECRET_KEY = '123456789'
+const expiresIn = '30min'
 
+//https://dev.to/kevin_odongo35/integrate-passport-js-to-node-express-and-vue-19ao
 //////////////////////
 
 var fs = require('fs');
@@ -36,33 +41,28 @@ const app = express();
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+app.use(flash());
+
 
 app.use(cookieParser());
-//////////////////////////////////////
-app.use(session({
-    secret: 'keyboard cat',
-    resave: false,
-    saveUninitialized: true,
-}))
 
-// app.use(passport.authenticate('session'));
-app.use(passport.initialize());
-app.use(passport.session());
+
 
 app.use(bodyParser.json());
 
-app.use(cors(corsOptions));
+app.use(cors({ credentials: true, origin: 'http://localhost:15173' }));
 
-var whitelist = ['http://localhost:5173', 'http://localhost:15173']
-var corsOptions = {
-    origin: function (origin, callback) {
-        if (whitelist.indexOf(origin) !== -1) {
-            callback(null, true)
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    }
-}
+// var whitelist = ['http://localhost:5173', 'http://localhost:15173']
+// var corsOptions = {
+//     withCredentials: true,
+//     origin: function (origin, callback) {
+//         if (whitelist.indexOf(origin) !== -1) {
+//             callback(null, true)
+//         } else {
+//             callback(new Error('Not allowed by CORS'));
+//         }
+//     }
+// }
 
 // mongoose.connect("mongodb://root:password@mongo:27017", {
 mongoose.connect("mongodb://mongodb:27017", {
@@ -74,88 +74,115 @@ mongoose.connect("mongodb://mongodb:27017", {
 });
 
 const userSchema = new mongoose.Schema({
-    // username: String,
-    // password: String,
+    username: String,
+    password: String,
 });
-
-userSchema.plugin(passportLocalMongoose);
 
 const User = new mongoose.model("User", userSchema);
 
-///////////////////////////////
-passport.use(User.createStrategy());
-passport.serializeUser(function (user, done) {
-    console.log("user id is here ", user);
-    done(null, user.id);
-});
-
-passport.deserializeUser(function (id, done) {
-    console.log("deserialise working");
-    User.findById(id, function (err, user) {
-        done(err, user);
-    });
-});
-
-
-////////////////////////////
-
 app.get("/register", (req, res) => {
 });
-app.get("/login", function (req, res) {
+
+// Create a token from a payload
+function createToken(payload) {
+    return jwt.sign(payload, SECRET_KEY, { expiresIn })
+}
+
+const isAuthenticated = (username, password) => {
+    User.findOne({ username: username }, function (err, foundUser) {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            if (foundUser) {
+                if (foundUser.password === password) {
+                    console.log("ID:", foundUser.id);
+                    console.log("NAME:", foundUser.username);
+                    return foundUser.id
+                }
+            }
+            else {
+                return 0;
+            }
+        }
+    });
+}
+
+app.post("/login", async function (req, res) {
+    const userName = req.body.username;
+    const password = md5(req.body.password);
+
+    const userID = await isAuthenticated(userName, password);
+    // console.log("what is userID ", userID);
+    if (userID === 0) {
+        const status = 401
+        const message = 'Incorrect username or password'
+        res.status(status).json({ status, message })
+        return
+    }
+    const accessToken = createToken({ id: userID })
+    console.log(accessToken);
+    // res.send({ token: accessToken, validation: true, user: userName, userId: userID });
+    // res.cookie('sessionCookieName', accessToken, { httpOnly: true })
+    res.cookie('sessionCookieName', accessToken)
+    res.status(200).json({ success: true })
+
 });
+
+function verifyToken(token) {
+    return jwt.verify(token, SECRET_KEY)
+}
+
+app.get("/login", function (req, res) {
+    var cookieValue = req.cookies.sessionCookieName;
+    console.log("cookie is here", cookieValue)
+    try {
+        verifyToken(cookieValue)
+        console.log("authorized");
+        res.send("verified");
+        next()
+    }
+    catch (err) {
+        const status = 401
+        const message = 'Unauthorized'
+        res.status(status).json({ status, message })
+    }
+});
+
+
 app.get("/convert", function (req, res) {
 })
 
 app.get("/logout", function (req, res) {
-    console.log("req in serialise ", req.cookies.session);
-    req.logout(function (err) {
-        console.log("log out ", req.cookies);
-        if (err) { return next(err); } else {
-            res.send(true)
-        }
-    });
+    res.send("login");
 })
 
 app.post("/register", (req, res) => {
     console.log("req body username is : " + req.body.username);
     console.log("req body password is : " + req.body.password);
 
-    User.register({ username: req.body.username }, req.body.password, function (err, user) {
+    // res.send("Express register received the request");
 
-        if (err) {
-            console.log("Error in User registration", err);
+    const newUser = new User({
+        username: req.body.username,
+        password: md5(req.body.password)
+    });
+    newUser.save((error) => {
+        if (error) {
+            if (error.code === 11000) {
+                //Duplicate key
+                return res.json({ status: 'error', error: 'Username already in use.' });
+            }
+            throw error;
+
         } else {
-            passport.authenticate("local")(req, res, function () {
-                let resUser = {
-                    validation: true,
-                }
-                res.send(resUser);
-            })
+            res.send("congrats! new user is added.")
         }
-    })
-})
-
-app.post("/login", function (req, res) {
-    const user = new User({
-        username: req.body.user,
-        password: req.body.password
     });
 
-    req.login(user, function (err) {
-        if (err) {
-            console.log(err);
-        } else {
-            passport.authenticate("local")(req, res, function (err) {
-                let resUser = {
-                    validation: true,
-                }
-                res.send(resUser);
-                // res.send("login authenticated")
-            }
-            );
-        }
-    })
-});
+})
+
+
 
 
 app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
@@ -207,3 +234,4 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
 app.listen(PORT, function () {
     console.log(`Server is running on port ${PORT}`);
 });
+

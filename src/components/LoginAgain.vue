@@ -29,31 +29,25 @@ import { ref } from 'vue'
 import axios from "axios"
 import { userAuthStore } from '../store/auth.store.js'
 import router from '../router';
+import { useCookies } from "vue3-cookies";
 
+const { cookies } = useCookies();
 const API_URL = "http://localhost:3000/";
 const username = ref('')
 const password = ref('')
 const authStore = userAuthStore();
 
+
 const onClickSubmit = () => {
-    const article = {
-        username: username.value,
-        password: password.value
-    };
-    axios.post(API_URL + "login", article).then((res) => {
-        if (res.data.validation == true) {
-            // authStore.auth();
-            // console.log("Great response is : ", res.data);
-            // console.log("cookie is here", document.cookie);
-            // console.log("Token is here;", res.data.token)
-            router.push("/video");
-            return res.data;
-        }
-        else {
-            console.log("Response is here: ", res.data.validation)
-            return res.data;
-        }
-    });
+
+    let cookie = cookies.get("sessionCookieName");
+
+    console.log("cookie", cookie);
+
+    axios.get(API_URL + "login", { withCredentials: true }).then(res => {
+        console.log(res);
+    })
+
 }
 </script>
 <style>

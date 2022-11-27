@@ -1,5 +1,6 @@
 <template>
     <div>
+        <h1>{{ authStore.$state.user }}</h1>
         <button @click="logout()">LOG OUT</button>
     </div>
     <div>
@@ -11,9 +12,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import axios from "axios"
+import { ref } from 'vue';
+import axios from "axios";
 import router from '../router';
+import { userAuthStore } from '../store/auth.store.js';
+const authStore = userAuthStore();
 
 const file = ref('')
 
@@ -43,9 +46,11 @@ const sendFile = async () => {
 }
 
 const logout = () => {
+    authStore.clearUser();
+    router.push("/login");
+
     axios.get("http://localhost:3000/logout").then(res => {
         if (res.data) {
-            router.push("/login");
         }
     });
 }
