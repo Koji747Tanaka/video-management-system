@@ -6,7 +6,6 @@ export const userAuthStore = defineStore({
         return {
             isLogin: false,
             user: null,
-            JWT: null
         }
     },
     getters: {

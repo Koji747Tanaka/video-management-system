@@ -5,14 +5,11 @@ import Video from "./components/VideoManagement.vue";
 import LoginAgain from "./components/LoginAgain.vue"
 import { userAuthStore } from "./store/auth.store.js";
 
-
-
 const routes = [
     {
         path: '/login',
         name: 'login',
         component: Login,
-
     },
     {
         path: '/register',
@@ -29,7 +26,7 @@ const routes = [
         name: 'video',
         component: Video,
         meta: {
-            requiresAuth: false, //true to require auth
+            requiresAuth: true, //true to require auth
         }
     }
 ]

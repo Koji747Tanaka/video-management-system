@@ -1,6 +1,4 @@
 <template>
-    <!-- <el-config-provider> -->
-
     <el-card id="card">
         <h3>動画管理サイト アカウント作成</h3>
         <el-container class="margin-top-little">
@@ -13,9 +11,7 @@
                     </el-input>
                 </el-form-item>
                 <div id="elButton">
-                    <!-- <el-form-item> -->
                     <el-button id="elButton" type="primary" plain @click="onClickSubmit()">アカウントを作成</el-button>
-                    <!-- </el-form-item> -->
                 </div>
             </el-form>
         </el-container>
@@ -43,25 +39,29 @@ import { userAuthStore } from '../store/auth.store.js'
 import router from '../router';
 
 const authStore = userAuthStore();
-
 const username = ref('')
 const password = ref('')
 
 const onClickSubmit = () => {
-    const article = {
-        username: username.value,
-        password: password.value
-    };
-    axios.post("http://localhost:3000/register", article)
+    const options = {
+        url: "http://localhost:3000/register",
+        method: 'POST',
+        data: {
+            username: username.value,
+            password: password.value
+        },
+        withCredentials: true,
+    }
+
+    axios(options)
         .then((res) => {
-            if (res.data.validation == true) {
+            if (res.data.success == true) {
                 authStore.auth();
                 console.log("authStore is Login", authStore.isLogin)
                 router.push("/video");
                 return res.data;
             }
             else {
-                console.log("Response is here: ", res.data.validation)
                 console.log("Response is here: ", res.data)
                 return res.data;
             }

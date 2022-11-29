@@ -8,7 +8,6 @@
                 </div>
             </el-form>
         </el-container>
-
         <el-container class="align-centre margin-top">
             <div class="block-grey">
                 <p>------------------------------------</p>
@@ -20,8 +19,6 @@
 
         </el-container>
     </el-card>
-
-
 </template>
 
 <script setup>
@@ -39,15 +36,9 @@ const authStore = userAuthStore();
 
 
 const onClickSubmit = () => {
-
-    let cookie = cookies.get("sessionCookieName");
-
-    console.log("cookie", cookie);
-
     axios.get(API_URL + "login", { withCredentials: true }).then(res => {
-        console.log(res);
+        console.log(res.data);
     })
-
 }
 </script>
 <style>

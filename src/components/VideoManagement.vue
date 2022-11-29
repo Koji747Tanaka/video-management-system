@@ -7,8 +7,6 @@
         <input ref="file" v-on:change="handleFileUpload()" type="file">
         <button @click="sendFile()">Convert</button>
     </div>
-
-
 </template>
 
 <script setup>
@@ -20,25 +18,15 @@ const authStore = userAuthStore();
 
 const file = ref('')
 
-const handleFileUpload = async () => {
-    // debugger;
-    // console.log("selected file", file.value.files[0])
-    //Upload to server
-}
-
 const sendFile = async () => {
     const myFiles = file.value.files
-    const formData = new FormData()
+    const formData = new FormData();
 
     Object.keys(myFiles).forEach(key => {
         formData.append(myFiles.item(key).name, myFiles.item(key))
     })
-
     console.log('This file is gonna be sent', file.value.files[0]);
     console.log("form data", formData);
-    // const article = {
-    //     file: file.value.files[0]
-    // };
     axios.post("http://localhost:3000/convert", formData)
         .then((res) => {
             console.log(res.data)
@@ -47,12 +35,17 @@ const sendFile = async () => {
 
 const logout = () => {
     authStore.clearUser();
-    router.push("/login");
+    const options = {
+        url: "http://localhost:3000/logout",
+        method: 'GET',
+        withCredentials: true,
+    }
 
-    axios.get("http://localhost:3000/logout").then(res => {
+    axios(options).then(res => {
         if (res.data) {
         }
     });
+    router.push("/login");
 }
 
 </script>

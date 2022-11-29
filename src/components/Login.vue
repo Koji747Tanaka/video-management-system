@@ -52,10 +52,6 @@ const config = {
 };
 
 const onClickSubmit = () => {
-    const article = {
-        username: username.value,
-        password: password.value
-    };
     const options = {
         url: "http://localhost:3000/login",
         method: 'POST',
@@ -66,26 +62,14 @@ const onClickSubmit = () => {
         withCredentials: true,
     }
 
-
-    // sessionCookieName=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2Njk1MzI3NzUsImV4cCI6MTY2OTUzNDU3NX0.f-vIYB0wDvpteOGTtN9JdcA01fMdkBDtd1qeLkv7e_4; Path=/; HttpOnly
     axios(options).then((res) => {
-        if (res.data.validation == true) {
+        if (res.data.success == true) {
+            authStore.setUser(res.data.username);
             authStore.auth();
-            authStore.setUser(res.data.user);
-            console.log("authStore is Login", authStore.isLogin)
-            console.log("Great response is : ", res.data);
-            console.log("cookie is here", res.cookie);
-            console.log("Token is here;", res.data.token)
-            console.log(res.data.token);
-            authStore.setJWT(res.data.token)
-
             router.push("/video");
             return res.data;
         }
         else {
-            console.log("cookie is here", document.cookie);
-            console.log("Response is here: ", res.data)
-            console.log("res. headers is here ", document.cookie)
             return res.data;
         }
     });
