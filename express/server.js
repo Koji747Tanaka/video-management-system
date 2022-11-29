@@ -90,56 +90,26 @@ const isAuthenticated = (username, password) => {
 app.post("/login", function (req, res) {
     const userName = req.body.username;
     const password = md5(req.body.password);
+
     const userID = isAuthenticated(userName, password);
+    console.log("what is userID ", userID);
+    if (userID === 0) {
+        const status = 401
+        const message = 'Incorrect username or password'
+        res.status(status).json({ status, message })
+        return
+    }
+    const accessToken = createToken({ id: userID })
+    console.log("here is token", accessToken);
 
-    User.findOne({ username: userName }, function (err, foundUser) {
-        if (err) {
-            console.log(err);
-        }
-        else {
-            if (foundUser) {
-                if (foundUser.password === password) {
-                    console.log("ID:", foundUser.id);
-                    console.log("NAME:", foundUser.username);
+    const responseJson = {
+        success: true,
+        username: userName,
+        userID: userID
+    }
 
-                    const accessToken = createToken({ id: foundUser.id })
-                    console.log("here is token", accessToken);
-                    const responseJson = {
-                        success: true,
-                        username: userName,
-                        userID: userID
-                    }
-                    res.cookie('JWTcookie', accessToken, { httpOnly: true })
-                    res.status(200).json(responseJson)
-                }
-            }
-            else {
-                const status = 401
-                const message = 'Incorrect username or password'
-                res.status(status).json({ status, message })
-                return
-            }
-        }
-    });
-
-
-    // if (userID === 0 || userID == undefined) {
-    //     const status = 401
-    //     const message = 'Incorrect username or password'
-    //     res.status(status).json({ status, message })
-    //     return
-    // }
-    // const accessToken = createToken({ id: userID })
-    // console.log("here is token", accessToken);
-
-    // const responseJson = {
-    //     success: true,
-    //     username: userName,
-    //     userID: userID
-    // }
-
-    // res.cookie('JWTcookie', accessToken, { httpOnly: true })
-    // res.status(200).json(responseJson)
+    res.cookie('JWTcookie', accessToken, { httpOnly: true })
+    res.status(200).json(responseJson)
 });
 
 
@@ -147,7 +117,7 @@ app.get("/login", function (req, res) {
     var JWTcookie = req.cookies.JWTcookie;
     try {
         verifyToken(JWTcookie);
-        console.log("decoded token ", jwt.decode(JWTcookie));
+        // console.log("decoded token ", jwt.decode(JWTcookie));
 
     }
     catch (err) {
@@ -162,7 +132,8 @@ app.get("/convert", function (req, res) {
 })
 
 app.get("/logout", function (req, res) {
-    res.cookie('JWTcookie', "deleted", { maxAge: 0, httpOnly: true })
+    res.cookie('JWTcookie', "deleted", { maxAge: 0, httpOnly: true });
+    res.send("logged out")
 })
 
 app.post("/register", (req, res) => {
