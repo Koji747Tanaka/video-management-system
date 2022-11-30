@@ -180,12 +180,28 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
         }
         console.log("The file was saved!", receivedName);
     });
+    ffmpeg(`./received/${receivedName}`)
+        .takeScreenshots(
+            {
+                count: 1,
+                timemarks: ['00:00:01.000'],
+                // size: '200x200,
+                folder: './thumbnails',
+                filename: noExName
+            });
 
     ffmpeg(`./received/${receivedName}`)
         .audioCodec('libopus')
         .audioBitrate(96)
         .output(`${transcodedSeg}/${receivedName}.m3u8`)
         .run()
+
+    // .screenshots({
+    //     count: 1,
+    //     filename: `${receivedName}`,
+    //     folder: './thumbnails',
+    //     size: '320x240'
+    // });
 
     ///Scorm package は別でダウンロード
     scopackager({
