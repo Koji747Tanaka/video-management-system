@@ -58,66 +58,61 @@ const User = new mongoose.model("User", userSchema);
 app.get("/register", (req, res) => {
 });
 
-// Create a token from a payload
-function createToken(payload) {
-    return jwt.sign(payload, SECRET_KEY, { expiresIn })
+// Create a token from a payload { id: userID, name: userName }
+function createToken(id, name) {
+    return jwt.sign({ id: id, name: name }, SECRET_KEY, { expiresIn })
 }
 
 function verifyToken(token) {
-    return jwt.verify(token, SECRET_KEY)
-}
-
-const isAuthenticated = (username, password) => {
-    User.findOne({ username: username }, function (err, foundUser) {
-        if (err) {
-            console.log(err);
-        }
-        else {
-            if (foundUser) {
-                if (foundUser.password === password) {
-                    console.log("ID:", foundUser.id);
-                    console.log("NAME:", foundUser.username);
-                    return foundUser.id
-                }
-            }
-            else {
-                return 0;
-            }
-        }
-    });
+    jwt.verify(token, SECRET_KEY, function (err, decoded) {
+        return decoded;
+    })
 }
 
 app.post("/login", function (req, res) {
     const userName = req.body.username;
     const password = md5(req.body.password);
 
-    const userID = isAuthenticated(userName, password);
-    console.log("what is userID ", userID);
-    if (userID === 0) {
-        const status = 401
-        const message = 'Incorrect username or password'
-        res.status(status).json({ status, message })
-        return
-    }
-    const accessToken = createToken({ id: userID })
-    console.log("here is token", accessToken);
+    // const userID = isAuthenticated(userName, password);
 
-    const responseJson = {
-        success: true,
-        username: userName,
-        userID: userID
-    }
+    User.findOne({ username: userName }, function (err, foundUser) {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            if (foundUser) {
+                if (foundUser.password === password) {
+                    const userID = foundUser.id
+                    const accessToken = createToken(userID, userName)
+                    console.log("here is token", accessToken);
 
-    res.cookie('JWTcookie', accessToken, { httpOnly: true })
-    res.status(200).json(responseJson)
+                    const responseJson = {
+                        success: true,
+                        username: userName,
+                        userID: userID
+                    }
+
+                    res.cookie('JWTcookie', accessToken, { httpOnly: true })
+                    res.status(200).json(responseJson)
+                }
+            }
+            else {
+                const status = 401
+                const message = 'Incorrect username or password'
+                res.status(status).json({ status, message })
+            }
+        }
+    });
 });
-
 
 app.get("/login", function (req, res) {
     var JWTcookie = req.cookies.JWTcookie;
     try {
-        verifyToken(JWTcookie);
-        // console.log("decoded token ", jwt.decode(JWTcookie));
+        console.log(verifyToken(JWTcookie));
+        const decoded = jwt.verify(JWTcookie, SECRET_KEY, function (err, decoded) {
+            return decoded;
+        })
+        console.log("decoded token ", decoded);
 
     }
     catch (err) {
@@ -139,14 +134,14 @@ app.get("/logout", function (req, res) {
 app.post("/register", (req, res) => {
     console.log("req body username is : " + req.body.username);
     console.log("req body password is : " + req.body.password);
-
+    const userName = req.body.username;
     // res.send("Express register received the request");
 
     const newUser = new User({
         username: req.body.username,
         password: md5(req.body.password)
     });
-    newUser.save((error, userID) => {
+    newUser.save((error, user) => {
         if (error) {
             if (error.code === 11000) {
                 //Duplicate key
@@ -155,15 +150,19 @@ app.post("/register", (req, res) => {
             throw error;
 
         } else {
-            const accessToken = createToken({ id: userID })
+            const accessToken = createToken(user.id, user.username);
+
+            const responseJson = {
+                success: true,
+                username: user.username,
+                userID: user.id
+            }
+
             res.cookie('JWTcookie', accessToken, { httpOnly: true })
-            res.send("congrats! new user is added.")
+            res.status(200).json(responseJson)
         }
     });
-
 })
-
-
 
 
 app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {

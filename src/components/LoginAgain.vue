@@ -38,6 +38,7 @@ const authStore = userAuthStore();
 const onClickSubmit = () => {
     axios.get(API_URL + "login", { withCredentials: true }).then(res => {
         console.log(res.data);
+        router.push("/video");
     })
 }
 </script>
