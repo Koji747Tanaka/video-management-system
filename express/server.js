@@ -112,7 +112,13 @@ app.get("/login", function (req, res) {
         const decoded = jwt.verify(JWTcookie, SECRET_KEY, function (err, decoded) {
             return decoded;
         })
-        console.log("decoded token ", decoded);
+        const responseJson = {
+            success: true,
+            username: decoded.name,
+            userID: decoded.id
+        }
+        res.status(200).json(responseJson);
+        // console.log("decoded token ", decoded);
 
     }
     catch (err) {
@@ -157,7 +163,6 @@ app.post("/register", (req, res) => {
                 username: user.username,
                 userID: user.id
             }
-
             res.cookie('JWTcookie', accessToken, { httpOnly: true })
             res.status(200).json(responseJson)
         }

@@ -1,19 +1,31 @@
 <script setup>
-
+import axios from "axios";
+import { userAuthStore } from './store/auth.store.js';
+const authStore = userAuthStore();
+const logout = () => {
+  authStore.clearUser();
+  const options = {
+    url: "http://localhost:3000/logout",
+    method: 'GET',
+    withCredentials: true,
+  }
+  axios(options).then(res => {
+    if (res.data) {
+      console.log("logout")
+    }
+  });
+}
 </script>
 
 <template>
-
   <el-container id="firstContainer">
     <el-menu id="top-menu">
       <img src="./img/chibalogoside.jpeg" alt="Chiba University Logo" class="logo" width="200" height="50">
-
+      <p>{{ authStore.$state.username }}</p>
+      <button v-if="authStore.$state.isLogin" @click="logout()">LOG OUT</button>
     </el-menu>
-
     <!-- <el-switch v-model="value" size="middle" active-text="English" inactive-text=" 日本語" /> -->
-
   </el-container>
-
   <main>
     <router-view />
   </main>

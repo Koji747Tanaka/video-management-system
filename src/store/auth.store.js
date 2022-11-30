@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import router from '../router';
 
 export const userAuthStore = defineStore({
     id: 'auth',
@@ -7,11 +8,11 @@ export const userAuthStore = defineStore({
             isLogin: false,
             userid: null,
             username: null,
-
         }
     },
     getters: {
-        isLoggedIn: (state) => state.user,
+
+
     },
     actions: {
         auth() {
@@ -19,6 +20,7 @@ export const userAuthStore = defineStore({
             console.log("Authentication is now passed.");
             // state.user = user;
         },
+
 
         setJWT(JWT) {
             this.JWT = JWT;
@@ -32,6 +34,8 @@ export const userAuthStore = defineStore({
 
         clearUser() {
             this.user = null;
+            this.isLogin = false;
+            router.push("/login");
         },
     }
 })
