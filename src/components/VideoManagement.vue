@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h1>{{ authStore.$state.user }}</h1>
+        <h1>{{ authStore.$state.username }}</h1>
         <button @click="logout()">LOG OUT</button>
     </div>
     <div>

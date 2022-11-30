@@ -64,10 +64,12 @@ const onClickSubmit = () => {
 
     axios(options).then((res) => {
         if (res.data.success == true) {
-            authStore.setUser(res.data.username);
+            const id = res.data.userID;
+            const username = res.data.username;
+
             authStore.auth();
+            authStore.setUser(id, username);
             router.push("/video");
-            return res.data;
         }
         else {
             return res.data;

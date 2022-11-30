@@ -56,10 +56,12 @@ const onClickSubmit = () => {
     axios(options)
         .then((res) => {
             if (res.data.success == true) {
+                const id = res.data.userID;
+                const username = res.data.username;
+
                 authStore.auth();
-                console.log("authStore is Login", authStore.isLogin)
+                authStore.setUser(id, username);
                 router.push("/video");
-                return res.data;
             }
             else {
                 console.log("Response is here: ", res.data)
