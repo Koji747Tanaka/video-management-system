@@ -3,7 +3,7 @@ import { defineConfig } from 'vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-
+import fs from 'fs'
 import vue from '@vitejs/plugin-vue'
 
 // https://vitejs.dev/config/
@@ -16,10 +16,16 @@ export default defineConfig({
     Components({
       resolvers: [ElementPlusResolver()],
     }),],
+  server: {
+    https: {
+      key: fs.readFileSync('./localhost-key.pem'),
+      cert: fs.readFileSync('./localhost.pem'),
+    }
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
+    },
   },
   // server: {
   //   proxy: {

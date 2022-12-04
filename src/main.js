@@ -9,7 +9,6 @@ import vueCookies from 'vue-cookies'
 // import { userAuthStore } from "./store/auth.store"
 const app = createApp(App)
 const pinia = createPinia()
-
 // app.use(vueCookies);
 app.use(pinia)
 app.use(router)

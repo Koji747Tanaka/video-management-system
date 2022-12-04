@@ -35,7 +35,6 @@ const onClickSubmit = () => {
         if (res.data.success == true) {
             const id = res.data.userID;
             const username = res.data.username;
-
             authStore.auth();
             authStore.setUser(id, username);
             router.push("/video");
@@ -45,6 +44,7 @@ const onClickSubmit = () => {
         }
     })
 }
+
 </script>
 <style>
 .login-form {

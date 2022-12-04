@@ -36,10 +36,32 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+// import { ref } from 'vue'
 import axios from "axios"
 import { userAuthStore } from '../store/auth.store.js'
 import router from '../router';
+import { onBeforeMount, onMounted, onBeforeUpdate, onUpdated, onBeforeUnmount, onUnmounted, ref } from 'vue'
+
+
+onMounted(() => {
+    const API_URL = "http://localhost:3000/";
+    const authStore = userAuthStore();
+
+    axios.get(API_URL + "login", { withCredentials: true }).then(res => {
+        if (res.data.success == true) {
+            const id = res.data.userID;
+            const username = res.data.username;
+            authStore.auth();
+            authStore.setUser(id, username);
+            console.log("mounted.")
+            router.push("/video");
+        }
+        else {
+            console.log("Response is here: ", res.data)
+        }
+    })
+
+})
 
 const API_URL = "http://localhost:3000/";
 const username = ref('')

@@ -15,6 +15,7 @@ const SECRET_KEY = process.env.ACCESS_TOKEN_SECRET
 const expiresIn = '30min'
 
 var fs = require('fs');
+const path = require('path');
 var dirReceived = './received';
 var dirTranscoded = './transcoded';
 
@@ -37,7 +38,7 @@ app.use(flash());
 app.use(cookieParser());
 app.use(bodyParser.json());
 
-app.use(cors({ credentials: true, origin: 'http://localhost:15173' }));
+app.use(cors({ credentials: true, origin: 'https://localhost:15173' }));
 
 // mongoose.connect("mongodb://root:password@mongo:27017", {
 mongoose.connect("mongodb://mongodb:27017", {
@@ -124,7 +125,8 @@ app.get("/login", function (req, res) {
     catch (err) {
         const status = 401
         const message = 'Unauthorized'
-        res.status(status).json({ status, message })
+        res.send("Not authorized. Better login");
+        // res.status(status).json({ status, message })
     }
 });
 
@@ -170,12 +172,34 @@ app.post("/register", (req, res) => {
 })
 
 
+
+var scormName = "";
+app.post("/scormProperty", function (req, res) {
+    scormName = req.body.scormName
+    console.log(scormName);
+    res.send({ success: true });
+});
+
+const getMostRecentFile = (dir) => {
+    const files = orderReccentFiles(dir);
+    return files.length ? files[0] : undefined;
+};
+
+const orderReccentFiles = (dir) => {
+    return fs.readdirSync(dir)
+        .filter(file => fs.lstatSync(path.join(dir, file)).isFile())
+        .map(file => ({ file, mtime: fs.lstatSync(path.join(dir, file)).mtime }))
+        .sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
+};
+
 app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
     const receivedName = Object.keys(req.files)[0];
+    console.log(req.files)
     const noExName = receivedName.substring(0, receivedName.indexOf("."));
-
+    console.log("NO extention name is here", noExName)
     const receivedFile = req.files[receivedName];
     var transcodedSeg = `./transcoded/${noExName}`;
+    console.log("transcoded segment file folder is here", transcodedSeg);
     mkNonDir(transcodedSeg);
     console.log({ transcodedSeg });
 
@@ -185,6 +209,7 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
         }
         console.log("The file was saved!", receivedName);
     });
+
     ffmpeg(`./received/${receivedName}`)
         .takeScreenshots(
             {
@@ -201,31 +226,29 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
         .output(`${transcodedSeg}/${receivedName}.m3u8`)
         .run()
 
-    // .screenshots({
-    //     count: 1,
-    //     filename: `${receivedName}`,
-    //     folder: './thumbnails',
-    //     size: '320x240'
-    // });
 
     ///Scorm package は別でダウンロード
-    scopackager({
-        version: '2004 4th Edition',
-        organization: 'Chiba University',
-        title: `${noExName}`,
-        language: 'fr-FR',
-        identifier: '00',
-        masteryScore: 80,
-        startingPage: 'index.html',
-        source: `${transcodedSeg}`,
-        package: {
-            version: "0.0.1",
-            zip: true,
-            outputFolder: './scormPackages'
-        }
-    }, function (msg) {
-        console.log(msg);
-    });
+    // scopackager({
+    //     version: '2004 4th Edition',
+    //     organization: 'Chiba University',
+    //     title: scormName,
+    //     language: 'fr-FR',
+    //     identifier: '00',
+    //     masteryScore: 80,
+    //     startingPage: 'index.html',
+    //     source: `${transcodedSeg}`,
+    //     package: {
+    //         name: scormName,
+    //         zip: true,
+    //         outputFolder: './scormPackages'
+    //     }
+    // }, function (msg) {
+    //     console.log(msg);
+    //     const pathToZip = "./scormPackages/" + getMostRecentFile("./scormPackages").file;
+    //     console.log("pathToZip", pathToZip);
+    //     res.download(pathToZip);
+    // });
+
 
     // .save(`./transcoded/${receivedName}`)
 
