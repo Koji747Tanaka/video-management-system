@@ -9,6 +9,7 @@ services:
 
     ports:
       - 3000:3000
+
     volumes:
       - video_express_node:/app/node_modules
       - transcoded_videos:/app/transcoded

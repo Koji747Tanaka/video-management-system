@@ -27,7 +27,7 @@ import { userAuthStore } from '../store/auth.store.js'
 import router from '../router';
 import { useCookies } from "vue3-cookies";
 
-const API_URL = "http://localhost:3000/";
+const API_URL = "https://localhost:3000/";
 const authStore = userAuthStore();
 
 const onClickSubmit = () => {

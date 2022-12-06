@@ -1,15 +1,11 @@
 <script setup>
 import axios from "axios";
 import { userAuthStore } from './store/auth.store.js';
-
-
-
-
 const authStore = userAuthStore();
 const logout = () => {
   authStore.clearUser();
   const options = {
-    url: "http://localhost:3000/logout",
+    url: "https://localhost:3000/logout",
     method: 'GET',
     withCredentials: true,
   }

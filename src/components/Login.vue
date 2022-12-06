@@ -44,7 +44,7 @@ import { onBeforeMount, onMounted, onBeforeUpdate, onUpdated, onBeforeUnmount, o
 
 
 onMounted(() => {
-    const API_URL = "http://localhost:3000/";
+    const API_URL = "https://localhost:3000/";
     const authStore = userAuthStore();
 
     axios.get(API_URL + "login", { withCredentials: true }).then(res => {
@@ -63,7 +63,7 @@ onMounted(() => {
 
 })
 
-const API_URL = "http://localhost:3000/";
+const API_URL = "https://localhost:3000/";
 const username = ref('')
 const password = ref('')
 const authStore = userAuthStore();
@@ -75,7 +75,7 @@ const config = {
 
 const onClickSubmit = () => {
     const options = {
-        url: "http://localhost:3000/login",
+        url: "https://localhost:3000/login",
         method: 'POST',
         data: {
             username: username.value,

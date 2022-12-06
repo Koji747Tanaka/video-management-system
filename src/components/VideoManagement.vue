@@ -2,8 +2,14 @@
     <el-container>
         <el-main>
             <el-row>
-                <el-col :span="8">
+                <el-col :span="6">
                     <input ref="file" v-on:change="handleFileUpload()" type="file" />
+                </el-col>
+                <el-col :span="6">
+                    <el-button @click="sendFile">セグメント化</el-button>
+                </el-col>
+                <el-col :span="12">
+                    <Preview />
                 </el-col>
             </el-row>
             <el-row>
@@ -15,15 +21,9 @@
                     </el-form>
                 </el-col>
                 <el-col :span="3">
-                    <el-button @click="sendFile()">Convert</el-button>
+                    <el-button @click="scormDownload">ダウンロード</el-button>
                 </el-col>
             </el-row>
-
-
-
-
-
-
         </el-main>
     </el-container>
 
@@ -33,16 +33,30 @@
 import { ref } from 'vue';
 import axios from "axios";
 import { userAuthStore } from '../store/auth.store.js';
-const authStore = userAuthStore();
+import router from '../router';
+import Preview from "./Preview.vue"
 
+const authStore = userAuthStore();
 const file = ref('');
 const scormName = ref('');
+
 
 const sendFile = async () => {
     const myFiles = file.value.files
     const formData = new FormData();
+    Object.keys(myFiles).forEach(key => {
+        formData.append(myFiles.item(key).name, myFiles.item(key))
+    })
+    console.log('This file is gonna be sent', file.value.files[0]);
+    console.log("form data", formData);
+    axios.post("https://localhost:3000/convert", formData)
+        .then((res) => {
+        });
+}
+
+const scormDownload = () => {
     const options = {
-        url: "http://localhost:3000/scormProperty",
+        url: "https://localhost:3000/scormProperty",
         method: 'POST',
         data: {
             scormName: scormName.value,
@@ -50,33 +64,28 @@ const sendFile = async () => {
     }
 
     axios(options).then((res) => {
-        if (res.data.success == true) {
-            Object.keys(myFiles).forEach(key => {
-                formData.append(myFiles.item(key).name, myFiles.item(key))
-            })
-            console.log('This file is gonna be sent', file.value.files[0]);
-            console.log("form data", formData);
-            const requestData = {
-                scormName: scormName.value,
-                formData: formData
-            }
-            console.log(formData);
+        console.log("res data success here", res.data.success);
 
-            axios.post("http://localhost:3000/convert", formData)
+        if (res.data.success) {
+            axios.post("https://localhost:3000/scorm", {
+                responseType: 'arraybuffer',
+                headers: { Accept: 'application/zip' },
+            })
                 .then((res) => {
                     var file = res;
-                    // console.log(res)
-
+                    console.log(res)
+                    const blob = new Blob([file], { type: 'application/zip' });
+                    const uri = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = scormName.value
+                    link.href = uri
+                    link.click();
                 });
         }
         else {
-            return res.data;
+            console.log("Scorm property root has a problem");
         }
-    });
-
-
-
-
+    })
 }
 
 // const logout = () => {
@@ -97,5 +106,7 @@ const sendFile = async () => {
 </script>
 
 <style>
-
+.el-row {
+    margin-bottom: 20px;
+}
 </style>

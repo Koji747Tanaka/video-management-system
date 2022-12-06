@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Register from "./components/Register.vue";
 import Login from "./components/Login.vue";
 import Video from "./components/VideoManagement.vue";
+import Preview from "./components/Preview.vue";
 import LoginAgain from "./components/LoginAgain.vue"
 import { userAuthStore } from "./store/auth.store.js";
 
@@ -20,6 +21,11 @@ const routes = [
         path: '/loginAgain',
         name: 'loginAgain',
         component: LoginAgain,
+    },
+    {
+        path: '/preview',
+        name: 'preview',
+        component: Preview,
     },
     {
         path: '/video',
