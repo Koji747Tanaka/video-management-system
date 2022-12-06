@@ -7,15 +7,26 @@ const md5 = require("md5");
 const cors = require("cors");
 const cookieParser = require('cookie-parser');
 const jwt = require("jsonwebtoken");
-
+var fs = require('fs');
+const path = require('path');
 var scopackager = require('simple-scorm-packager');
 var flash = require('connect-flash');
-
+const https = require('https');
 const SECRET_KEY = process.env.ACCESS_TOKEN_SECRET
 const expiresIn = '30min'
 
-var fs = require('fs');
-const path = require('path');
+// var privateKey = fs.readFileSync(__dirname + '/certs/selfsigned.key');
+var privateKey = fs.readFileSync(__dirname + '/test/localhost-key.pem');
+///Users/koji/workspace/video-management/video-management/localhost-key.pem
+// var certificate = fs.readFileSync(__dirname + '/certs/selfsigned.crt');
+var certificate = fs.readFileSync(__dirname + '/test/localhost.pem');
+///Users/koji/workspace/video-management/video-management/localhost.pem
+
+var options = {
+    key: privateKey,
+    cert: certificate
+};
+
 var dirReceived = './received';
 var dirTranscoded = './transcoded';
 
@@ -39,6 +50,8 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 
 app.use(cors({ credentials: true, origin: 'https://localhost:15173' }));
+// app.use(cors({ credentials: true, origin: 'http://localhost:15173' }));
+app.use(express.static(__dirname + '/transcoded'));
 
 // mongoose.connect("mongodb://root:password@mongo:27017", {
 mongoose.connect("mongodb://mongodb:27017", {
@@ -108,8 +121,9 @@ app.post("/login", function (req, res) {
 
 app.get("/login", function (req, res) {
     var JWTcookie = req.cookies.JWTcookie;
+    console.log("JWT cookie is here", req.cookies.JWTcookie);
     try {
-        console.log(verifyToken(JWTcookie));
+        console.log("veryfy token is here", verifyToken(JWTcookie));
         const decoded = jwt.verify(JWTcookie, SECRET_KEY, function (err, decoded) {
             return decoded;
         })
@@ -120,7 +134,6 @@ app.get("/login", function (req, res) {
         }
         res.status(200).json(responseJson);
         // console.log("decoded token ", decoded);
-
     }
     catch (err) {
         const status = 401
@@ -223,39 +236,43 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
     ffmpeg(`./received/${receivedName}`)
         .audioCodec('libopus')
         .audioBitrate(96)
-        .output(`${transcodedSeg}/${receivedName}.m3u8`)
+        .output(`${transcodedSeg}/${noExName}.m3u8`)
         .run()
-
-
-    ///Scorm package は別でダウンロード
-    // scopackager({
-    //     version: '2004 4th Edition',
-    //     organization: 'Chiba University',
-    //     title: scormName,
-    //     language: 'fr-FR',
-    //     identifier: '00',
-    //     masteryScore: 80,
-    //     startingPage: 'index.html',
-    //     source: `${transcodedSeg}`,
-    //     package: {
-    //         name: scormName,
-    //         zip: true,
-    //         outputFolder: './scormPackages'
-    //     }
-    // }, function (msg) {
-    //     console.log(msg);
-    //     const pathToZip = "./scormPackages/" + getMostRecentFile("./scormPackages").file;
-    //     console.log("pathToZip", pathToZip);
-    //     res.download(pathToZip);
-    // });
-
-
     // .save(`./transcoded/${receivedName}`)
-
-
 })
 
-app.listen(PORT, function () {
-    console.log(`Server is running on port ${PORT}`);
-});
+app.get("/video", function (req, res) {
+    res.send(__dirname + "/transcoded/yayoi/yayoi.m3u8");
+})
+
+app.post("/scorm", function (req, res) {
+    ///Scorm package は別でダウンロード
+    scopackager({
+        version: '2004 4th Edition',
+        organization: 'Chiba University',
+        title: scormName,
+        language: 'fr-FR',
+        identifier: '00',
+        masteryScore: 80,
+        startingPage: 'index.html',
+        source: `${transcodedSeg}`,
+        package: {
+            name: scormName,
+            zip: true,
+            outputFolder: './scormPackages'
+        }
+    }, function (msg) {
+        console.log(msg);
+        const pathToZip = "./scormPackages/" + getMostRecentFile("./scormPackages").file;
+        console.log("pathToZip", pathToZip);
+        res.download(pathToZip);
+    });
+})
+
+// app.listen(PORT, function () {
+//     console.log(`Server is running on port ${PORT}`);
+// });
+
+var httpsServer = https.createServer(options, app);
+httpsServer.listen(3000);
 
