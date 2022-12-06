@@ -184,26 +184,7 @@ app.post("/register", (req, res) => {
     });
 })
 
-
-
-var scormName = "";
-app.post("/scormProperty", function (req, res) {
-    scormName = req.body.scormName
-    console.log(scormName);
-    res.send({ success: true });
-});
-
-const getMostRecentFile = (dir) => {
-    const files = orderReccentFiles(dir);
-    return files.length ? files[0] : undefined;
-};
-
-const orderReccentFiles = (dir) => {
-    return fs.readdirSync(dir)
-        .filter(file => fs.lstatSync(path.join(dir, file)).isFile())
-        .map(file => ({ file, mtime: fs.lstatSync(path.join(dir, file)).mtime }))
-        .sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
-};
+var transcodedSeg = ""
 
 app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
     const receivedName = Object.keys(req.files)[0];
@@ -211,7 +192,7 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
     const noExName = receivedName.substring(0, receivedName.indexOf("."));
     console.log("NO extention name is here", noExName)
     const receivedFile = req.files[receivedName];
-    var transcodedSeg = `./transcoded/${noExName}`;
+    transcodedSeg = `./transcoded/${noExName}`;
     console.log("transcoded segment file folder is here", transcodedSeg);
     mkNonDir(transcodedSeg);
     console.log({ transcodedSeg });
@@ -245,8 +226,26 @@ app.get("/video", function (req, res) {
     res.send(__dirname + "/transcoded/yayoi/yayoi.m3u8");
 })
 
+var scormName = "";
+app.post("/scormProperty", function (req, res) {
+    scormName = req.body.scormName
+    console.log(scormName);
+    res.send({ success: true });
+});
+
+const getMostRecentFile = (dir) => {
+    const files = orderReccentFiles(dir);
+    return files.length ? files[0] : undefined;
+};
+
+const orderReccentFiles = (dir) => {
+    return fs.readdirSync(dir)
+        .filter(file => fs.lstatSync(path.join(dir, file)).isFile())
+        .map(file => ({ file, mtime: fs.lstatSync(path.join(dir, file)).mtime }))
+        .sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
+};
+
 app.post("/scorm", function (req, res) {
-    ///Scorm package は別でダウンロード
     scopackager({
         version: '2004 4th Edition',
         organization: 'Chiba University',
@@ -255,7 +254,7 @@ app.post("/scorm", function (req, res) {
         identifier: '00',
         masteryScore: 80,
         startingPage: 'index.html',
-        source: `${transcodedSeg}`,
+        source: `./transcoded/yayoi`,
         package: {
             name: scormName,
             zip: true,
@@ -263,6 +262,7 @@ app.post("/scorm", function (req, res) {
         }
     }, function (msg) {
         console.log(msg);
+        console.log("scorm creation is finished. now send back")
         const pathToZip = "./scormPackages/" + getMostRecentFile("./scormPackages").file;
         console.log("pathToZip", pathToZip);
         res.download(pathToZip);
