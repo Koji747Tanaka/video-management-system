@@ -14,22 +14,24 @@ var flash = require('connect-flash');
 const https = require('https');
 const SECRET_KEY = process.env.ACCESS_TOKEN_SECRET
 const expiresIn = '30min'
+const ffmpeg = require('./ffmpeg');
+const shortid = require('shortid');
 
-// var privateKey = fs.readFileSync(__dirname + '/certs/selfsigned.key');
-var privateKey = fs.readFileSync(__dirname + '/test/localhost-key.pem');
-///Users/koji/workspace/video-management/video-management/localhost-key.pem
-// var certificate = fs.readFileSync(__dirname + '/certs/selfsigned.crt');
-var certificate = fs.readFileSync(__dirname + '/test/localhost.pem');
-///Users/koji/workspace/video-management/video-management/localhost.pem
-
+//自己発行証明書
+var privateKey = fs.readFileSync(__dirname + '/cert/localhost-key.pem');
+var certificate = fs.readFileSync(__dirname + '/cert/localhost.pem');
 var options = {
     key: privateKey,
     cert: certificate
 };
 
+const PORT = 3000;
+const app = express();
+var scormName = "";
+
+//ディレクトリーの作成
 var dirReceived = './received';
 var dirTranscoded = './transcoded';
-
 const mkNonDir = (dir) => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
@@ -38,10 +40,7 @@ const mkNonDir = (dir) => {
 mkNonDir(dirReceived);
 mkNonDir(dirTranscoded);
 
-const ffmpeg = require('./ffmpeg');
 
-const PORT = 3000;
-const app = express();
 app.use(bodyParser.urlencoded({
     extended: true
 }));
@@ -68,6 +67,13 @@ const userSchema = new mongoose.Schema({
 });
 
 const User = new mongoose.model("User", userSchema);
+
+const videoSchema = new mongoose.Schema({
+    userid: String,
+    videoname: String,
+});
+
+const Video = new mongoose.model("Video", videoSchema);
 
 app.get("/register", (req, res) => {
 });
@@ -186,16 +192,21 @@ app.post("/register", (req, res) => {
 
 var transcodedSeg = ""
 
+//セグメント
 app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
     const receivedName = Object.keys(req.files)[0];
     console.log(req.files)
     const noExName = receivedName.substring(0, receivedName.indexOf("."));
-    console.log("NO extention name is here", noExName)
+    const radom = shortid.generate();
+
+    const dirName = noExName + radom;
+
+    console.log("NO extention name is here", dirName)
     const receivedFile = req.files[receivedName];
-    transcodedSeg = `./transcoded/${noExName}`;
-    console.log("transcoded segment file folder is here", transcodedSeg);
-    mkNonDir(transcodedSeg);
-    console.log({ transcodedSeg });
+    transcodedSegFolder = `./transcoded/${dirName}`;
+    console.log("transcoded segment file folder is here", transcodedSegFolder);
+    mkNonDir(transcodedSegFolder);
+    console.log({ transcodedSegFolder });
 
     fs.writeFile(`./received/${receivedName}`, receivedFile["data"], function (err) {
         if (err) {
@@ -211,33 +222,43 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
                 timemarks: ['00:00:01.000'],
                 // size: '200x200,
                 folder: './thumbnails',
-                filename: noExName
+                filename: dirName
             });
 
     ffmpeg(`./received/${receivedName}`)
         .audioCodec('libopus')
         .audioBitrate(96)
-        .output(`${transcodedSeg}/${noExName}.m3u8`)
+        .output(`${transcodedSegFolder}/${dirName}.m3u8`)
+        .on('end', function () {
+            console.log('file has been converted succesfully')
+            res.send({ success: true });;
+        })
         .run()
-    // .save(`./transcoded/${receivedName}`)
+
+
+
 })
+
+app.post("/videoDatabase", function (req, res) {
+
+});
 
 app.get("/video", function (req, res) {
     res.send(__dirname + "/transcoded/yayoi/yayoi.m3u8");
 })
 
-var scormName = "";
+//SCORMパッケージのプロパティを設定
 app.post("/scormProperty", function (req, res) {
     scormName = req.body.scormName
     console.log(scormName);
     res.send({ success: true });
 });
 
+//最新で作成されたファイル
 const getMostRecentFile = (dir) => {
     const files = orderReccentFiles(dir);
     return files.length ? files[0] : undefined;
 };
-
 const orderReccentFiles = (dir) => {
     return fs.readdirSync(dir)
         .filter(file => fs.lstatSync(path.join(dir, file)).isFile())
@@ -245,6 +266,7 @@ const orderReccentFiles = (dir) => {
         .sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
 };
 
+//SCORMパッケージ作成　ZIPファイル作成
 app.post("/scorm", function (req, res) {
     scopackager({
         version: '2004 4th Edition',
@@ -254,7 +276,7 @@ app.post("/scorm", function (req, res) {
         identifier: '00',
         masteryScore: 80,
         startingPage: 'index.html',
-        source: `./transcoded/yayoi`,
+        source: `${transcodedSegFolder}`,
         package: {
             name: scormName,
             zip: true,
@@ -269,10 +291,7 @@ app.post("/scorm", function (req, res) {
     });
 })
 
-// app.listen(PORT, function () {
-//     console.log(`Server is running on port ${PORT}`);
-// });
-
+//HTTPSプロトコルに変換
 var httpsServer = https.createServer(options, app);
 httpsServer.listen(3000);
 

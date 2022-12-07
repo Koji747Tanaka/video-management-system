@@ -49,8 +49,22 @@ const sendFile = async () => {
     })
     console.log('This file is gonna be sent', file.value.files[0]);
     console.log("form data", formData);
+
     axios.post("https://localhost:3000/convert", formData)
         .then((res) => {
+            if (res.data.success == true) {
+                const options = {
+                    url: "https://localhost:3000/videoDatabase",
+                    method: 'POST',
+                    data: {
+                        userID: authStore.$state.userid,
+                    }
+                }
+
+                axios(options).then((res) => {
+                    console.log(res)
+                })
+            }
         });
 }
 
