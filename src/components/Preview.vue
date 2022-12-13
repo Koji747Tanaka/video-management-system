@@ -14,7 +14,7 @@ import { userAuthStore } from '../store/auth.store.js'
 import router from '../router';
 import Hls from "hls.js";
 
-const videoSrc = "https://localhost:3000/yayoi/yayoi.m3u8";
+const videoSrc = "https://localhost:3000/transcoded/yayoiEiTPzZ5cs/yayoiEiTPzZ5cs.m3u8";
 console.log("video sorce", videoSrc);
 
 const videoPlay = () => {

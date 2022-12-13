@@ -24,21 +24,67 @@
                     <el-button @click="scormDownload">ダウンロード</el-button>
                 </el-col>
             </el-row>
+            <el-row>
+                <div v-for="video in videos">
+                    <el-col>
+                        <span>{{ video.videoName }}</span>
+                        <el-image style="height: 200px; padding: 10px;" :src="video.url" />
+                    </el-col>
+                </div>
+            </el-row>
         </el-main>
+    </el-container>
+
+
+    <el-container>
     </el-container>
 
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import axios from "axios";
 import { userAuthStore } from '../store/auth.store.js';
 import router from '../router';
-import Preview from "./Preview.vue"
+import Preview from "./Preview.vue";
 
 const authStore = userAuthStore();
 const file = ref('');
 const scormName = ref('');
+
+let urls = ref([]);
+let videoNames = ref([]);
+
+let videos = reactive([]);
+
+onMounted(() => {
+    const API_URL = "https://localhost:3000/";
+    const authStore = userAuthStore();
+
+    axios.get(API_URL + "videoThumbnails", { params: { userID: authStore.$state.userid } }).then(res => {
+        if (res.data.success == true) {
+            console.log(res.data.objects);
+
+            var objects = res.data.objects;
+            // const stemURL = "https://localhost:3000/thumbnails/";
+            // videos = objects;
+
+            objects.forEach(object => {
+                videos.push(object)
+                // videos.urls.push(stemURL + object.file);
+                // videos.videoNames.push(object.videoName);
+
+                // urls.value.push(stemURL + object.file);
+                // videoNames.value.push(object.videoName)
+            })
+
+        }
+        else {
+            console.log("Response is here: ", res.data)
+        }
+    })
+})
+
 
 
 const sendFile = async () => {
@@ -52,15 +98,18 @@ const sendFile = async () => {
 
     axios.post("https://localhost:3000/convert", formData)
         .then((res) => {
+            console.log({ res });
             if (res.data.success == true) {
                 const options = {
                     url: "https://localhost:3000/videoDatabase",
                     method: 'POST',
                     data: {
                         userID: authStore.$state.userid,
+                        videoName: res.data.dirName
                     }
                 }
-
+                console.log("userid is here", authStore.$state.userid);
+                console.log("axios will be sent here to videoDatabase");
                 axios(options).then((res) => {
                     console.log(res)
                 })

@@ -31,7 +31,7 @@ var scormName = "";
 
 //ディレクトリーの作成
 var dirReceived = './received';
-var dirTranscoded = './transcoded';
+var dirTranscoded = './public/transcoded';
 const mkNonDir = (dir) => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir);
@@ -47,10 +47,8 @@ app.use(bodyParser.urlencoded({
 app.use(flash());
 app.use(cookieParser());
 app.use(bodyParser.json());
-
 app.use(cors({ credentials: true, origin: 'https://localhost:15173' }));
-// app.use(cors({ credentials: true, origin: 'http://localhost:15173' }));
-app.use(express.static(__dirname + '/transcoded'));
+app.use(express.static(__dirname + '/public'));
 
 // mongoose.connect("mongodb://root:password@mongo:27017", {
 mongoose.connect("mongodb://mongodb:27017", {
@@ -198,12 +196,11 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
     console.log(req.files)
     const noExName = receivedName.substring(0, receivedName.indexOf("."));
     const radom = shortid.generate();
-
     const dirName = noExName + radom;
 
     console.log("NO extention name is here", dirName)
     const receivedFile = req.files[receivedName];
-    transcodedSegFolder = `./transcoded/${dirName}`;
+    transcodedSegFolder = `./public/transcoded/${dirName}`;
     console.log("transcoded segment file folder is here", transcodedSegFolder);
     mkNonDir(transcodedSegFolder);
     console.log({ transcodedSegFolder });
@@ -215,36 +212,93 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
         console.log("The file was saved!", receivedName);
     });
 
+    //サムネイル画像作成
     ffmpeg(`./received/${receivedName}`)
         .takeScreenshots(
             {
                 count: 1,
                 timemarks: ['00:00:01.000'],
-                // size: '200x200,
-                folder: './thumbnails',
+                folder: './public/thumbnails',
                 filename: dirName
             });
 
+    //セグメントファイル化
     ffmpeg(`./received/${receivedName}`)
-        .audioCodec('libopus')
-        .audioBitrate(96)
+        .audioCodec('libmp3lame')
+        .videoCodec('libx264')
+        .size('320x200')
+        .audioBitrate(128)
         .output(`${transcodedSegFolder}/${dirName}.m3u8`)
         .on('end', function () {
             console.log('file has been converted succesfully')
-            res.send({ success: true });;
+            res.send({ success: true, dirName: dirName });
         })
-        .run()
-
-
-
+        .run();
 })
 
 app.post("/videoDatabase", function (req, res) {
-
+    console.log(req.body.userID);
+    const newVideo = new Video({
+        userid: req.body.userID,
+        videoname: req.body.videoName
+    });
+    newVideo.save((error, video) => {
+        if (error) {
+            if (error.code === 11000) {
+                //Duplicate key
+                return res.json({ status: 'error', error: 'Username already in use.' });
+            }
+            throw error;
+        } else {
+            res.send("successfully saved.");
+        }
+    });
 });
 
-app.get("/video", function (req, res) {
-    res.send(__dirname + "/transcoded/yayoi/yayoi.m3u8");
+app.get("/videoThumbnails", function (req, res) {
+    console.log(req.query.userID);
+
+    let usersFiles = [];
+    let usersVideoNames = [];
+    Video.find({ userid: req.query.userID }, function (err, foundVideoArray) {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            if (foundVideoArray) {
+                foundVideoArray.forEach(video => {
+                    var files = fs.readdirSync('./public/thumbnails');
+                    // console.log("files", files);
+                    var foundFile = files.find(file => {
+                        if (file.substring(0, file.indexOf(".")) == video.videoname) {
+                            return file;
+                        }
+                        else {
+                            return 0;
+                        }
+                    })
+                    if (foundFile) {
+                        const stemURL = "https://localhost:3000/thumbnails/";
+                        var object = {
+                            url: stemURL + foundFile,
+                            videoName: foundFile.substring(0, foundFile.indexOf("."))
+                        }
+
+                        usersFiles.push(object);
+                        // usersVideoNames.push(foundFile.substring(0, foundFile.indexOf(".")))
+                    }
+                })
+                console.log("found video name is here", usersFiles);
+                res.send({ success: true, objects: usersFiles });
+
+            }
+            else {
+                const status = 401
+                const message = 'Incorrect username or password'
+                res.status(status).json({ status, message })
+            }
+        }
+    });
 })
 
 //SCORMパッケージのプロパティを設定
