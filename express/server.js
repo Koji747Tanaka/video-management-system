@@ -28,6 +28,11 @@ var options = {
 const PORT = 3000;
 const app = express();
 var scormName = "";
+var sourceFolder = "";
+
+var sourcePath = "";
+
+var transcodedSeg = ""
 
 //ディレクトリーの作成
 var dirReceived = './received';
@@ -188,7 +193,7 @@ app.post("/register", (req, res) => {
     });
 })
 
-var transcodedSeg = ""
+
 
 //セグメント
 app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
@@ -211,6 +216,7 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
         }
         console.log("The file was saved!", receivedName);
     });
+    const videoURLStem = "https://localhost:3000/transcoded/";
 
     //サムネイル画像作成
     ffmpeg(`./received/${receivedName}`)
@@ -231,7 +237,7 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
         .output(`${transcodedSegFolder}/${dirName}.m3u8`)
         .on('end', function () {
             console.log('file has been converted succesfully')
-            res.send({ success: true, dirName: dirName });
+            res.send({ success: true, dirName: dirName, videoUrl: videoURLStem });
         })
         .run();
 })
@@ -278,10 +284,13 @@ app.get("/videoThumbnails", function (req, res) {
                         }
                     })
                     if (foundFile) {
-                        const stemURL = "https://localhost:3000/thumbnails/";
+                        const thumbURLStem = "https://localhost:3000/thumbnails/";
+                        const videoURLStem = "https://localhost:3000/transcoded/";
+                        const nameWithoutEx = foundFile.substring(0, foundFile.indexOf("."));
                         var object = {
-                            url: stemURL + foundFile,
-                            videoName: foundFile.substring(0, foundFile.indexOf("."))
+                            thumbUrl: thumbURLStem + foundFile,
+                            videoUrl: videoURLStem + nameWithoutEx + "/" + nameWithoutEx + ".m3u8",
+                            videoName: nameWithoutEx
                         }
 
                         usersFiles.push(object);
@@ -301,13 +310,6 @@ app.get("/videoThumbnails", function (req, res) {
     });
 })
 
-//SCORMパッケージのプロパティを設定
-app.post("/scormProperty", function (req, res) {
-    scormName = req.body.scormName
-    console.log(scormName);
-    res.send({ success: true });
-});
-
 //最新で作成されたファイル
 const getMostRecentFile = (dir) => {
     const files = orderReccentFiles(dir);
@@ -320,6 +322,17 @@ const orderReccentFiles = (dir) => {
         .sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
 };
 
+//SCORMパッケージのプロパティを設定
+app.post("/scormProperty", function (req, res) {
+    scormName = req.body.scormName;
+    sourceFolder = req.body.sourceFolder;
+
+    sourcePath = "./public/transcoded/" + sourceFolder
+
+    console.log(scormName);
+    res.send({ success: true });
+});
+
 //SCORMパッケージ作成　ZIPファイル作成
 app.post("/scorm", function (req, res) {
     scopackager({
@@ -330,7 +343,7 @@ app.post("/scorm", function (req, res) {
         identifier: '00',
         masteryScore: 80,
         startingPage: 'index.html',
-        source: `${transcodedSegFolder}`,
+        source: sourcePath,
         package: {
             name: scormName,
             zip: true,
@@ -338,9 +351,11 @@ app.post("/scorm", function (req, res) {
         }
     }, function (msg) {
         console.log(msg);
-        console.log("scorm creation is finished. now send back")
         const pathToZip = "./scormPackages/" + getMostRecentFile("./scormPackages").file;
         console.log("pathToZip", pathToZip);
+
+        // const pathToZip = sourcePath;
+        // console.log("pathToZip", pathToZip);
         res.download(pathToZip);
     });
 })

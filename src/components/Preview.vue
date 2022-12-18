@@ -1,8 +1,9 @@
 <template>
     <div>
         <div>
-            <video id="video" controls muted autoplay playsinline loop></video>
-            <button @click="videoPlay">video play</button>
+            <video id="video" controls muted playsinline loop></video>
+            <!-- <button @click="videoPlay">video play</button> -->
+            <!-- <span>{{ props.videoUrl }}</span> -->
         </div>
     </div>
 </template>
@@ -12,15 +13,29 @@
 import axios from "axios"
 import { userAuthStore } from '../store/auth.store.js'
 import router from '../router';
+import { ref, reactive, onMounted, onUpdated } from 'vue';
 import Hls from "hls.js";
 
-const videoSrc = "https://localhost:3000/transcoded/yayoiEiTPzZ5cs/yayoiEiTPzZ5cs.m3u8";
+const props = defineProps({
+    videoUrl: String,
+    name: String
+})
+
+var videoSrc = props.videoUrl.value;
 console.log("video sorce", videoSrc);
 
-const videoPlay = () => {
+onUpdated(() => {
     var video = document.getElementById('video');
     var hls = new Hls();
-    hls.loadSource(videoSrc);
+    hls.loadSource(props.videoUrl);
+    hls.attachMedia(video);
+})
+
+const videoPlay = () => {
+    console.log("played url is ", props.videoUrl)
+    var video = document.getElementById('video');
+    var hls = new Hls();
+    hls.loadSource(props.videoUrl);
     hls.attachMedia(video);
     video.play();
 }

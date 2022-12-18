@@ -9,40 +9,45 @@
                     <el-button @click="sendFile">セグメント化</el-button>
                 </el-col>
                 <el-col :span="12">
-                    <Preview />
+                    {{ folderNameZip }}
+                    <Preview :name="name" :videoUrl="previewUrl" />
                 </el-col>
             </el-row>
             <el-row>
-                <el-col :span="12">
+                <el-col :span="6">
                     <el-form label-width="160px" style="max-width: 460px">
                         <el-form-item label="SCORM パッケージ名">
-                            <el-input v-model="scormName" />
+                            <el-input placeholder="Zip ファイル名" v-model="folderNameZip" />
                         </el-form-item>
                     </el-form>
                 </el-col>
-                <el-col :span="3">
+                <el-col :span="6">
                     <el-button @click="scormDownload">ダウンロード</el-button>
                 </el-col>
             </el-row>
             <el-row>
-                <div v-for="video in videos">
-                    <el-col>
-                        <span>{{ video.videoName }}</span>
-                        <el-image style="height: 200px; padding: 10px;" :src="video.url" />
+                <template v-for="video in videos">
+                    <el-col :span="6">
+                        <div @click="setVideo(video.videoUrl, video.videoName)">
+                            <span>{{ video.videoName }}</span>
+                            <el-image style="height: 200px; " :src="video.thumbUrl" />
+                        </div>
                     </el-col>
-                </div>
+                </template>
             </el-row>
         </el-main>
     </el-container>
 
 
     <el-container>
+
+
     </el-container>
 
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, onUpdated } from 'vue';
 import axios from "axios";
 import { userAuthStore } from '../store/auth.store.js';
 import router from '../router';
@@ -50,14 +55,20 @@ import Preview from "./Preview.vue";
 
 const authStore = userAuthStore();
 const file = ref('');
-const scormName = ref('');
 
-let urls = ref([]);
-let videoNames = ref([]);
+const sourceFolder = ref('');
 
-let videos = reactive([]);
+let videos = ref([]);
+
+const previewUrl = ref('');
+const folderNameZip = ref('');
 
 onMounted(() => {
+    updateThumbnails();
+})
+
+const updateThumbnails = () => {
+    videos.value = [];
     const API_URL = "https://localhost:3000/";
     const authStore = userAuthStore();
 
@@ -66,16 +77,8 @@ onMounted(() => {
             console.log(res.data.objects);
 
             var objects = res.data.objects;
-            // const stemURL = "https://localhost:3000/thumbnails/";
-            // videos = objects;
-
             objects.forEach(object => {
-                videos.push(object)
-                // videos.urls.push(stemURL + object.file);
-                // videos.videoNames.push(object.videoName);
-
-                // urls.value.push(stemURL + object.file);
-                // videoNames.value.push(object.videoName)
+                videos.value.push(object)
             })
 
         }
@@ -83,10 +86,11 @@ onMounted(() => {
             console.log("Response is here: ", res.data)
         }
     })
-})
+}
 
-
-
+var fileWithEx = "";
+var videoUrl = "";
+var dirName = "";
 const sendFile = async () => {
     const myFiles = file.value.files
     const formData = new FormData();
@@ -108,10 +112,19 @@ const sendFile = async () => {
                         videoName: res.data.dirName
                     }
                 }
-                console.log("userid is here", authStore.$state.userid);
-                console.log("axios will be sent here to videoDatabase");
+                // console.log("userid is here", authStore.$state.userid);
+                // console.log("axios will be sent here to videoDatabase");
+
+                console.log("video Url ", res.data.videoUrl)
+                fileWithEx = "/" + res.data.dirName + ".m3u8"
+                videoUrl = res.data.videoUrl + res.data.dirName + fileWithEx
+                dirName = res.data.dirName;
+
+
                 axios(options).then((res) => {
                     console.log(res)
+                    updateThumbnails();
+                    setVideo(videoUrl, dirName);
                 })
             }
         });
@@ -122,13 +135,14 @@ const scormDownload = () => {
         url: "https://localhost:3000/scormProperty",
         method: 'POST',
         data: {
-            scormName: scormName.value,
+            scormName: folderNameZip.value,
+            sourceFolder: sourceFolder.value
+
         }
     }
 
     axios(options).then((res) => {
         console.log("res data success here", res.data.success);
-
         if (res.data.success) {
             axios.post("https://localhost:3000/scorm", {
                 responseType: 'arraybuffer',
@@ -140,7 +154,7 @@ const scormDownload = () => {
                     const blob = new Blob([file], { type: 'application/zip' });
                     const uri = URL.createObjectURL(blob);
                     const link = document.createElement('a');
-                    link.download = scormName.value
+                    link.download = folderNameZip.value
                     link.href = uri
                     link.click();
                 });
@@ -151,20 +165,15 @@ const scormDownload = () => {
     })
 }
 
-// const logout = () => {
-//     authStore.clearUser();
-//     const options = {
-//         url: "http://localhost:3000/logout",
-//         method: 'GET',
-//         withCredentials: true,
-//     }
+const setVideo = (videoUrl, folderName) => {
+    console.log(videoUrl);
+    console.log(folderName);
+    previewUrl.value = videoUrl;
+    sourceFolder.value = folderName;
+    folderNameZip.value = folderName;
 
-//     axios(options).then(res => {
-//         if (res.data) {
-//         }
-//     });
-//     router.push("/login");
-// }
+}
+
 
 </script>
 
