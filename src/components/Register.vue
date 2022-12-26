@@ -44,7 +44,7 @@ const password = ref('')
 
 const onClickSubmit = () => {
     const options = {
-        url: "http://localhost:3000/register",
+        url: "https://localhost:3000/register",
         method: 'POST',
         data: {
             username: username.value,

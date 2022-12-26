@@ -60,7 +60,6 @@ onMounted(() => {
             console.log("Response is here: ", res.data)
         }
     })
-
 })
 
 const API_URL = "https://localhost:3000/";

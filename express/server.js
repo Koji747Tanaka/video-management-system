@@ -16,6 +16,7 @@ const SECRET_KEY = process.env.ACCESS_TOKEN_SECRET
 const expiresIn = '30min'
 const ffmpeg = require('./ffmpeg');
 const shortid = require('shortid');
+const { uploadFile } = require('./s3')
 
 //自己発行証明書
 var privateKey = fs.readFileSync(__dirname + '/cert/localhost-key.pem');
@@ -198,7 +199,7 @@ app.post("/register", (req, res) => {
 //セグメント
 app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
     const receivedName = Object.keys(req.files)[0];
-    console.log(req.files)
+    console.log(req.files);
     const noExName = receivedName.substring(0, receivedName.indexOf("."));
     const radom = shortid.generate();
     const dirName = noExName + radom;
@@ -216,7 +217,7 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
         }
         console.log("The file was saved!", receivedName);
     });
-    const videoURLStem = "https://localhost:3000/transcoded/";
+
 
     //サムネイル画像作成
     ffmpeg(`./received/${receivedName}`)
@@ -235,9 +236,26 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
         .size('320x200')
         .audioBitrate(128)
         .output(`${transcodedSegFolder}/${dirName}.m3u8`)
-        .on('end', function () {
+        .on('end', async function () {
             console.log('file has been converted succesfully')
-            res.send({ success: true, dirName: dirName, videoUrl: videoURLStem });
+
+            const filenames = fs.readdirSync(`${transcodedSegFolder}`)
+            filenames.forEach(async (filename) => {
+                const folderWithFile = dirName + "/" + filename
+                const filePath = `${transcodedSegFolder}` + "/" + filename
+
+                console.log("file path is here", filePath)
+                console.log("folder and file here", folderWithFile)
+
+                const result = await uploadFile(filePath, folderWithFile);
+                console.log(result);
+            })
+
+
+            // const result = await uploadFile(`${transcodedSegFolder}/${dirName}.m3u8`, dirName);
+            // console.log(result);
+
+            res.send({ success: true, dirName: dirName, videoUrl: transcodedSegFolder });
         })
         .run();
 })
