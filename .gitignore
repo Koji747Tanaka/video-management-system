@@ -29,3 +29,18 @@ coverage
 
 #database
 database-data
+
+# dotenv environment variable files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+/express/.env
+.ignoretest
+
+
+express/public/*
+express/scormPackages/*
+express/video/*
+express/received/*

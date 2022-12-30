@@ -23,23 +23,21 @@ function uploadFile(filePath, fileNameWithFolder) {
     }
     return s3.upload(uploadParams).promise()
 }
-
-//uploads a folder to s3
-// function uploadFile(folderPath) {
-//     const filenames = fs.readdirSync(folderPath)
-//     filenames.forEach((filename) => {
-
-//     })
-
-//     const fileStream = fs.createReadStream(filepath);
-//     const uploadParams = {
-//         Bucket: bucketName,
-//         Body: fileStream,
-//         Key: fileName
-//     }
-//     return s3.upload(uploadParams).promise()
-// }
-
 exports.uploadFile = uploadFile
+
 //download file from s3
+
+function getFileStream(fileKey){
+    console.log("file key is here", fileKey)
+    const downloadParams ={
+        Key: fileKey,
+        Bucket: bucketName
+    }
+    
+    return s3.getObject(downloadParams).createReadStream();
+    // return s3.getObject(downloadParams)
+}
+exports.getFileStream = getFileStream
+
+
 

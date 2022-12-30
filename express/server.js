@@ -16,7 +16,7 @@ const SECRET_KEY = process.env.ACCESS_TOKEN_SECRET
 const expiresIn = '30min'
 const ffmpeg = require('./ffmpeg');
 const shortid = require('shortid');
-const { uploadFile } = require('./s3')
+const { uploadFile, getFileStream } = require('./s3')
 
 //自己発行証明書
 var privateKey = fs.readFileSync(__dirname + '/cert/localhost-key.pem');
@@ -28,6 +28,7 @@ var options = {
 
 const PORT = 3000;
 const app = express();
+const videoUrl = "https://localhost:3000/transcoded/"
 var scormName = "";
 var sourceFolder = "";
 
@@ -229,35 +230,61 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
                 filename: dirName
             });
 
+    // let results = [];
     //セグメントファイル化
-    ffmpeg(`./received/${receivedName}`)
+    ffmpeg(`./received/${receivedName}`).addOptions([
+        '-profile:v baseline',
+        '-level 3.0',
+        '-start_number 0',
+        '-hls_time 10',
+        '-hls_list_size 0',
+        '-f hls'
+    ])
         .audioCodec('libmp3lame')
         .videoCodec('libx264')
-        .size('320x200')
-        .audioBitrate(128)
-        .output(`${transcodedSegFolder}/${dirName}.m3u8`)
+        // .size('320x200')
+        // .audioBitrate(128)
+        
+        // .output(`${transcodedSegFolder}`)
         .on('end', async function () {
             console.log('file has been converted succesfully')
 
             const filenames = fs.readdirSync(`${transcodedSegFolder}`)
-            filenames.forEach(async (filename) => {
+            filenames.forEach((filename) => {
                 const folderWithFile = dirName + "/" + filename
                 const filePath = `${transcodedSegFolder}` + "/" + filename
 
                 console.log("file path is here", filePath)
                 console.log("folder and file here", folderWithFile)
 
-                const result = await uploadFile(filePath, folderWithFile);
+                const result =uploadFile(filePath, folderWithFile);
                 console.log(result);
+                // console.log("imagePath", `/images/${result.key}`);
+                // results.push(result);
             })
+            
 
+            res.send({success: true, dirName: dirName, videoUrl: videoUrl})
 
-            // const result = await uploadFile(`${transcodedSegFolder}/${dirName}.m3u8`, dirName);
-            // console.log(result);
-
-            res.send({ success: true, dirName: dirName, videoUrl: transcodedSegFolder });
+            // Promise.all(results).then((value)=>{
+            //     console.log("value is here", value)
+            //     res.send({success: true, imagePaths: value})
+            // })
         })
+        .output(`${transcodedSegFolder}/${dirName}.m3u8`)
+
         .run();
+})
+
+app.get("/images", function(req, res){
+    console.log("/images/ is working")
+    const key = req.params.objectKey
+    console.log("key is here", key)
+    const readStream = getFileStream(key) 
+    // console.log("file stream is working", readStream)
+    readStream.pipe(res)
+
+    // res.send(readStream);
 })
 
 app.post("/videoDatabase", function (req, res) {
