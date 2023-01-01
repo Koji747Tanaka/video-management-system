@@ -31,7 +31,7 @@
           </el-row>
         </el-col>
         <el-col :span="12">
-          {{ sourceFolder }}
+          {{ previewName }}
           <Preview :name="name" :videoUrl="previewUrl" />
         </el-col>
       </el-row>
@@ -39,7 +39,11 @@
       <el-row :gutter="10">
         <template v-for="video in videos">
           <el-col :span="6">
-            <div @click="setVideo(video.videoUrl, video.videoName)">
+            <div
+              @click="
+                setVideo(video.videoUrl, video.uniqueName, video.videoName)
+              "
+            >
               <span>{{ video.videoName }}</span
               ><br />
               <el-image
@@ -67,8 +71,8 @@ import Preview from "./Preview.vue";
 const authStore = userAuthStore();
 const file = ref("");
 
-const sourceFolder = ref("Video Name");
-
+const sourceFolder = ref("");
+const previewName = ref("Click a video");
 let videos = ref([]);
 
 const previewUrl = ref("");
@@ -103,7 +107,7 @@ const updateThumbnails = () => {
 
 var fileWithEx = "";
 var videoUrl = "";
-var dirName = "";
+var uniqueName = "";
 const sendFile = async () => {
   const myFiles = file.value.files;
   const formData = new FormData();
@@ -113,7 +117,7 @@ const sendFile = async () => {
   console.log("This file is gonna be sent", file.value.files[0]);
   console.log("form data", formData);
 
-  axios.post("https://localhost:3000/convertTest", formData).then((res) => {
+  axios.post("https://localhost:3000/convert", formData).then((res) => {
     console.log({ res });
     if (res.data.success == true) {
       console.log("test try");
@@ -125,46 +129,21 @@ const sendFile = async () => {
           method: "POST",
           data: {
             userID: authStore.$state.userid,
-            videoName: res.data.dirName,
+            videoName: res.data.videoName,
+            uniqueName: res.data.uniqueName,
           },
         };
 
         console.log("video Url ", res.data.videoUrl);
-        fileWithEx = "/" + res.data.dirName + ".m3u8";
-        videoUrl = res.data.videoUrl + res.data.dirName + fileWithEx;
-        dirName = res.data.dirName;
-
-        // console.log("video url is here", videoUrl);
-
+        fileWithEx = "/" + res.data.uniqueName + ".m3u8";
+        videoUrl = res.data.videoUrl + res.data.uniqueName + fileWithEx;
+        uniqueName = res.data.uniqueName;
         axios(options).then((res) => {
           console.log("response is here ", res.data);
-          // updateThumbnails();
-          // setVideo(videoUrl, dirName);
+          updateThumbnails();
+          setVideo(videoUrl, uniqueName);
         });
       });
-
-      // const options = {
-      //   url: "https://localhost:3000/videoDatabase",
-      //   method: "POST",
-      //   data: {
-      //     userID: authStore.$state.userid,
-      //     videoName: res.data.dirName,
-      //   },
-      // };
-
-      // console.log("video Url ", res.data.videoUrl);
-      // fileWithEx = "/" + res.data.dirName + ".m3u8";
-      // videoUrl = res.data.videoUrl + res.data.dirName + fileWithEx;
-      // dirName = res.data.dirName;
-
-      // // console.log("video url is here", videoUrl);
-
-      // axios(options).then((res) => {
-      //   console.log("response is here ", res.data);
-      //   // updateThumbnails();
-      //   // setVideo(videoUrl, dirName);
-      // });
-      ///////////////////////////////////////////////////////////
     }
   });
 };
@@ -203,12 +182,13 @@ const scormDownload = () => {
   });
 };
 
-const setVideo = (videoUrl, folderName) => {
+const setVideo = (videoUrl, uniqueName, videoName) => {
   console.log(videoUrl);
-  console.log(folderName);
+  console.log(videoName);
   previewUrl.value = videoUrl;
-  sourceFolder.value = folderName;
-  folderNameZip.value = folderName;
+  sourceFolder.value = uniqueName;
+  folderNameZip.value = videoName;
+  previewName.value = videoName;
 
   window.scrollTo({
     top: 0,

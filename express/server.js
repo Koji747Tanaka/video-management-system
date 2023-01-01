@@ -75,7 +75,8 @@ const User = new mongoose.model("User", userSchema);
 
 const videoSchema = new mongoose.Schema({
     userid: String,
-    videoname: String,
+    videoName: String,
+    uniqueName: String
 });
 
 const Video = new mongoose.model("Video", videoSchema);
@@ -196,19 +197,20 @@ app.post("/register", (req, res) => {
 })
 let receivedName = "";
 let ffmpegFile = "";
-let dirName = "";
+let uniqueName = "";
+let videoName ="";
 //////////////////////////////test/////////////////////////////////////////
-app.post("/convertTest", fileUpload({ createParentPath: true }), function (req, res) {
+app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
     mkNonDir(dirReceived);
     receivedName = Object.keys(req.files)[0];
     console.log(req.files);
-    const noExName = receivedName.substring(0, receivedName.indexOf("."));
+    videoName = receivedName.substring(0, receivedName.indexOf("."));
     const radom = shortid.generate();
-    dirName = noExName + radom;
+    uniqueName = videoName + radom;
 
-    console.log("NO extention name is here", dirName)
+    console.log("NO extention name is here", videoName)
     const receivedFile = req.files[receivedName];
-    transcodedSegFolder = `./public/transcoded/${dirName}`;
+    transcodedSegFolder = `./public/transcoded/${uniqueName}`;
     console.log("transcoded segment file folder is here", transcodedSegFolder);
     mkNonDir(transcodedSegFolder);
     console.log({ transcodedSegFolder });
@@ -226,7 +228,7 @@ app.post("/convertTest", fileUpload({ createParentPath: true }), function (req, 
         });
     });
     ffmpegFile = `./received/${receivedName}`
-    res.send({success: true, dirName: dirName, videoUrl: videoUrl})
+    res.send({success: true, uniqueName: uniqueName, videoUrl: videoUrl, videoName: videoName})
 })
 
 app.get("/ffmpeg", function(req, res){
@@ -237,12 +239,11 @@ app.get("/ffmpeg", function(req, res){
             count: 1,
             timemarks: ['00:00:01.000'],
             folder: './public/thumbnails',
-            filename: dirName
+            filename: uniqueName
         }).on('error', function(err) {
             console.log('screenshot error happened: ' + err.message);
           }).on('end', function(err) {
             console.log('Screenshot process finished: ');
-            // res.send({success: true, dirName: dirName, videoUrl: videoUrl})
           });
 
         // let results = [];
@@ -264,138 +265,51 @@ app.get("/ffmpeg", function(req, res){
 
             const filenames = fs.readdirSync(`${transcodedSegFolder}`)
             filenames.forEach((filename) => {
-                const folderWithFile = dirName + "/" + filename
+                const folderWithFile = uniqueName + "/" + filename
                 const filePath = `${transcodedSegFolder}` + "/" + filename
 
                 console.log("file path is here", filePath)
                 console.log("folder and file here", folderWithFile)
-
-
                 //uncomment here to make a save here
-                // const result =uploadFile(filePath, folderWithFile);
+                const result =uploadFile(filePath, folderWithFile);
                 // console.log(result);
               
             })
             //uncomment here to make a save here
             // fs.rmSync(`./received`, { recursive: true, force: true });
             console.log("res.send fron ffmpeg")
-            res.send({success: true, dirName: dirName, videoUrl: videoUrl})
+            // res.send({success: true, uniqueName: uniqueName, videoUrl: videoUrl})
+            res.send({success: true, uniqueName: uniqueName, videoUrl: videoUrl, videoName: videoName})
         })
         .on('error', function(err) {
             console.log('converting error happened: ' + err.message);
           })
-        .save(`${transcodedSegFolder}/${dirName}.m3u8`);
-        // .output(`${transcodedSegFolder}/${dirName}.m3u8`)
+        .save(`${transcodedSegFolder}/${uniqueName}.m3u8`);
+        // .output(`${transcodedSegFolder}/${uniqueName}.m3u8`)
         // .run();
 })
 
 ///////////////////////////////////////////////////////////////////////
 
-//セグメント
-app.post("/convert", fileUpload({ createParentPath: true }), async function (req, res) {
-    mkNonDir(dirReceived);
-    const receivedName = Object.keys(req.files)[0];
-    console.log(req.files);
-    const noExName = receivedName.substring(0, receivedName.indexOf("."));
-    const radom = shortid.generate();
-    const dirName = noExName + radom;
-
-    console.log("NO extention name is here", dirName)
-    const receivedFile = req.files[receivedName];
-    transcodedSegFolder = `./public/transcoded/${dirName}`;
-    console.log("transcoded segment file folder is here", transcodedSegFolder);
-    mkNonDir(transcodedSegFolder);
-    console.log({ transcodedSegFolder });
-
-    fs.open(`./received/${receivedName}`, 'w', (err, fd) => {
-        if (err) throw err;
-        fs.writeFile(fd, receivedFile["data"], function (err) {
-            if (err) {
-                return console.log("Err in write file ", err);
-            }
-            console.log("The file was saved!", receivedName);
-            fs.close(fd, (err) => {
-                if (err) throw err;
-            });
-        });
-    });
-
-    //サムネイル画像作成
-    // ffmpeg(`./received/${receivedName}`)
-    ffmpeg()
-        .input(`./received/${receivedName}`)
-        .takeScreenshots(
-            {
-                count: 1,
-                timemarks: ['00:00:01.000'],
-                folder: './public/thumbnails',
-                filename: dirName
-            }).on('error', function(err) {
-                console.log('screenshot error happened: ' + err.message);
-              }).on('end', function(err) {
-                console.log('Screenshot process finished: ');
-              });
-
-    // let results = [];
-    //セグメントファイル化
-    ffmpeg(`./received/${receivedName}`)
-        .addOptions([
-            '-profile:v baseline',
-            '-level 3.0',
-            '-start_number 0',
-            '-hls_time 10',
-            '-hls_list_size 0',
-            '-f hls'
-                ])
-        .audioCodec('libmp3lame')
-        .videoCodec('libx264')
-        .audioBitrate(128)
-        .on('end', function () {
-            console.log('file has been converted succesfully')
-
-            const filenames = fs.readdirSync(`${transcodedSegFolder}`)
-            filenames.forEach((filename) => {
-                const folderWithFile = dirName + "/" + filename
-                const filePath = `${transcodedSegFolder}` + "/" + filename
-
-                console.log("file path is here", filePath)
-                console.log("folder and file here", folderWithFile)
 
 
-                //uncomment here to make a save here
-                // const result =uploadFile(filePath, folderWithFile);
-                // console.log(result);
-              
-            })
-            //uncomment here to make a save here
-            // fs.rmSync(`./received`, { recursive: true, force: true });
+// app.get("/images", function(req, res){
+//     console.log("/images/ is working")
+//     const key = req.params.objectKey
+//     console.log("key is here", key)
+//     const readStream = getFileStream(key) 
+//     // console.log("file stream is working", readStream)
+//     readStream.pipe(res)
 
-            res.send({success: true, dirName: dirName, videoUrl: videoUrl})
-        })
-        .on('error', function(err) {
-            console.log('converting error happened: ' + err.message);
-          })
-        .save(`${transcodedSegFolder}/${dirName}.m3u8`);
-        // .output(`${transcodedSegFolder}/${dirName}.m3u8`)
-        // .run();
-})
-
-app.get("/images", function(req, res){
-    console.log("/images/ is working")
-    const key = req.params.objectKey
-    console.log("key is here", key)
-    const readStream = getFileStream(key) 
-    // console.log("file stream is working", readStream)
-    readStream.pipe(res)
-
-    // res.send(readStream);
-})
+//     // res.send(readStream);
+// })
 
 app.post("/videoDatabase", function (req, res) {
     console.log(req.body.userID);
     const newVideo = new Video({
         userid: req.body.userID,
-        videoname: req.body.videoName
+        videoName: req.body.videoName,
+        uniqueName: req.body.uniqueName
     });
     newVideo.save((error, video) => {
         if (error) {
@@ -421,11 +335,11 @@ app.get("/videoThumbnails", function (req, res) {
         }
         else {
             if (foundVideoArray) {
+                var files = fs.readdirSync('./public/thumbnails');
                 foundVideoArray.forEach(video => {
-                    var files = fs.readdirSync('./public/thumbnails');
                     // console.log("files", files);
                     var foundFile = files.find(file => {
-                        if (file.substring(0, file.indexOf(".")) == video.videoname) {
+                        if (file.substring(0, file.indexOf(".")) == video.uniqueName) {
                             return file;
                         }
                         else {
@@ -436,10 +350,13 @@ app.get("/videoThumbnails", function (req, res) {
                         const thumbURLStem = "https://localhost:3000/thumbnails/";
                         const videoURLStem = "https://localhost:3000/transcoded/";
                         const nameWithoutEx = foundFile.substring(0, foundFile.indexOf("."));
+                        console.log("videoname situation", nameWithoutEx)
+
                         var object = {
                             thumbUrl: thumbURLStem + foundFile,
                             videoUrl: videoURLStem + nameWithoutEx + "/" + nameWithoutEx + ".m3u8",
-                            videoName: nameWithoutEx
+                            videoName: video.videoName,
+                            uniqueName: nameWithoutEx,
                         }
 
                         usersFiles.push(object);
@@ -447,6 +364,7 @@ app.get("/videoThumbnails", function (req, res) {
                     }
                 })
                 console.log("found video name is here", usersFiles);
+
                 res.send({ success: true, objects: usersFiles });
             }
             else {
