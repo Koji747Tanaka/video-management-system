@@ -1,36 +1,52 @@
 <template>
   <el-container>
     <el-main>
-      <el-row>
-        <el-col :span="6">
-          <input ref="file" v-on:change="handleFileUpload()" type="file" />
-        </el-col>
-        <el-col :span="6">
-          <el-button @click="sendFile">セグメント化</el-button>
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-row>
+            <el-col :span="12">
+              <input ref="file" v-on:change="handleFileUpload()" type="file" />
+            </el-col>
+            <el-col :span="12">
+              <el-button @click="sendFile">セグメント化</el-button>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col> hello </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="12">
+              <el-form label-width="160px" style="max-width: 460px">
+                <el-form-item label="SCORM パッケージ名">
+                  <el-input
+                    placeholder="Zip ファイル名"
+                    v-model="folderNameZip"
+                  />
+                </el-form-item>
+              </el-form>
+            </el-col>
+            <el-col :span="12">
+              <el-button @click="scormDownload">ダウンロード</el-button>
+            </el-col>
+          </el-row>
         </el-col>
         <el-col :span="12">
-          {{ folderNameZip }}
+          {{ sourceFolder }}
           <Preview :name="name" :videoUrl="previewUrl" />
         </el-col>
       </el-row>
-      <el-row>
-        <el-col :span="6">
-          <el-form label-width="160px" style="max-width: 460px">
-            <el-form-item label="SCORM パッケージ名">
-              <el-input placeholder="Zip ファイル名" v-model="folderNameZip" />
-            </el-form-item>
-          </el-form>
-        </el-col>
-        <el-col :span="6">
-          <el-button @click="scormDownload">ダウンロード</el-button>
-        </el-col>
-      </el-row>
-      <el-row>
+
+      <el-row :gutter="10">
         <template v-for="video in videos">
           <el-col :span="6">
             <div @click="setVideo(video.videoUrl, video.videoName)">
-              <span>{{ video.videoName }}</span>
-              <el-image style="height: 200px" :src="video.thumbUrl" />
+              <span>{{ video.videoName }}</span
+              ><br />
+              <el-image
+                style="height: 200px"
+                :src="video.thumbUrl"
+                class="videoDiv"
+              />
             </div>
           </el-col>
         </template>
@@ -51,7 +67,7 @@ import Preview from "./Preview.vue";
 const authStore = userAuthStore();
 const file = ref("");
 
-const sourceFolder = ref("");
+const sourceFolder = ref("Video Name");
 
 let videos = ref([]);
 
@@ -100,20 +116,6 @@ const sendFile = async () => {
   axios.post("https://localhost:3000/convert", formData).then((res) => {
     console.log({ res });
     if (res.data.success == true) {
-      //   const s3Objects = res.data.imagePaths;
-      //   s3Objects.forEach((object) => {
-      //     console.log("object key", object.key);
-      //     axios
-      //       .get(`https://localhost:3000/images`, {
-      //         params: {
-      //           objectKey: object.key,
-      //         },
-      //       })
-      //       .then((res) => {
-      //         console.log("response ");
-      //       });
-      //   });
-
       const options = {
         url: "https://localhost:3000/videoDatabase",
         method: "POST",
@@ -179,11 +181,20 @@ const setVideo = (videoUrl, folderName) => {
   previewUrl.value = videoUrl;
   sourceFolder.value = folderName;
   folderNameZip.value = folderName;
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
 };
 </script>
 
 <style>
 .el-row {
   margin-bottom: 20px;
+}
+
+.videoDiv {
+  cursor: pointer;
 }
 </style>

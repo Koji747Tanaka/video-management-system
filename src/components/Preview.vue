@@ -41,4 +41,18 @@ onUpdated(() => {
 //   video.play();
 // };
 </script>
-<style></style>
+<style>
+video {
+  width: 90%;
+}
+
+.width250 {
+  width: 250px;
+}
+.width200 {
+  width: 200px;
+}
+.width150 {
+  width: 150px;
+}
+</style>

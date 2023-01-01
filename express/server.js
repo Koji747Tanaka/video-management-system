@@ -16,7 +16,7 @@ const SECRET_KEY = process.env.ACCESS_TOKEN_SECRET
 const expiresIn = '30min'
 const ffmpeg = require('./ffmpeg');
 const shortid = require('shortid');
-const { uploadFile, getFileStream } = require('./s3')
+const { uploadFile} = require('./s3')
 
 //自己発行証明書
 var privateKey = fs.readFileSync(__dirname + '/cert/localhost-key.pem');
@@ -44,7 +44,7 @@ const mkNonDir = (dir) => {
         fs.mkdirSync(dir);
     }
 }
-mkNonDir(dirReceived);
+
 mkNonDir(dirTranscoded);
 
 
@@ -198,7 +198,8 @@ app.post("/register", (req, res) => {
 
 
 //セグメント
-app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
+app.post("/convert", fileUpload({ createParentPath: true }), async function (req, res) {
+    mkNonDir(dirReceived);
     const receivedName = Object.keys(req.files)[0];
     console.log(req.files);
     const noExName = receivedName.substring(0, receivedName.indexOf("."));
@@ -212,12 +213,39 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
     mkNonDir(transcodedSegFolder);
     console.log({ transcodedSegFolder });
 
-    fs.writeFile(`./received/${receivedName}`, receivedFile["data"], function (err) {
-        if (err) {
-            return console.log("Err in write file ", err);
-        }
-        console.log("The file was saved!", receivedName);
+    // fs.writeFile(`./received/${receivedName}`, receivedFile["data"], function (err) {
+    //     if (err) {
+    //         return console.log("Err in write file ", err);
+    //     }
+    //     console.log("The file was saved!", receivedName);
+    // });
+
+    fs.open(`./received/${receivedName}`, 'w', (err, fd) => {
+        if (err) throw err;
+        fs.writeFile(fd, receivedFile["data"], function (err) {
+            if (err) {
+                return console.log("Err in write file ", err);
+            }
+            console.log("The file was saved!", receivedName);
+            fs.close(fd, (err) => {
+                if (err) throw err;
+            });
+        });
+
+        // fs.writeFile(fd, 'Hello!\n', (err) => {
+        //     if (err) throw err;
+    
+        //     console.log('test.txtに追記されました');
+    
+        //     fs.close(fd, (err) => {
+        //         if (err) throw err;
+        //     });
+        // });
     });
+
+    
+
+
 
 
     //サムネイル画像作成
@@ -228,11 +256,15 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
                 timemarks: ['00:00:01.000'],
                 folder: './public/thumbnails',
                 filename: dirName
-            });
+            }).on('error', function(err) {
+                console.log('screenshot error happened: ' + err.message);
+              }).on('end', function(err) {
+                console.log('Screenshot process finished: ');
+              });
 
     // let results = [];
     //セグメントファイル化
-    ffmpeg(`./received/${receivedName}`).addOptions([
+    ffmpeg(`./received/${receivedName}`, { timeout: 432000 }).addOptions([
         '-profile:v baseline',
         '-level 3.0',
         '-start_number 0',
@@ -242,11 +274,8 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
     ])
         .audioCodec('libmp3lame')
         .videoCodec('libx264')
-        // .size('320x200')
-        // .audioBitrate(128)
-        
-        // .output(`${transcodedSegFolder}`)
-        .on('end', async function () {
+        .audioBitrate(128)
+        .on('end', function () {
             console.log('file has been converted succesfully')
 
             const filenames = fs.readdirSync(`${transcodedSegFolder}`)
@@ -262,18 +291,16 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
                 // console.log("imagePath", `/images/${result.key}`);
                 // results.push(result);
             })
-            
+            fs.rmSync(`./received`, { recursive: true, force: true });
 
             res.send({success: true, dirName: dirName, videoUrl: videoUrl})
-
-            // Promise.all(results).then((value)=>{
-            //     console.log("value is here", value)
-            //     res.send({success: true, imagePaths: value})
-            // })
         })
-        .output(`${transcodedSegFolder}/${dirName}.m3u8`)
-
-        .run();
+        .on('error', function(err) {
+            console.log('converting error happened: ' + err.message);
+          })
+        .save(`${transcodedSegFolder}/${dirName}.m3u8`);
+        // .output(`${transcodedSegFolder}/${dirName}.m3u8`)
+        // .run();
 })
 
 app.get("/images", function(req, res){
@@ -344,7 +371,6 @@ app.get("/videoThumbnails", function (req, res) {
                 })
                 console.log("found video name is here", usersFiles);
                 res.send({ success: true, objects: usersFiles });
-
             }
             else {
                 const status = 401
@@ -398,10 +424,10 @@ app.post("/scorm", function (req, res) {
         console.log(msg);
         const pathToZip = "./scormPackages/" + getMostRecentFile("./scormPackages").file;
         console.log("pathToZip", pathToZip);
+        res.download(pathToZip );
 
-        // const pathToZip = sourcePath;
-        // console.log("pathToZip", pathToZip);
-        res.download(pathToZip);
+
+
     });
 })
 
