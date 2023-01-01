@@ -28,7 +28,7 @@ coverage
 *.sw?
 
 #database
-database-data
+database-data/*
 
 # dotenv environment variable files
 .env

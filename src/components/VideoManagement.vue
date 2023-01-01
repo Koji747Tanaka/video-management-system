@@ -113,30 +113,58 @@ const sendFile = async () => {
   console.log("This file is gonna be sent", file.value.files[0]);
   console.log("form data", formData);
 
-  axios.post("https://localhost:3000/convert", formData).then((res) => {
+  axios.post("https://localhost:3000/convertTest", formData).then((res) => {
     console.log({ res });
     if (res.data.success == true) {
-      const options = {
-        url: "https://localhost:3000/videoDatabase",
-        method: "POST",
-        data: {
-          userID: authStore.$state.userid,
-          videoName: res.data.dirName,
-        },
-      };
+      console.log("test try");
+      //////////////////////////test////////////////////////////////
+      axios.get("https://localhost:3000/ffmpeg").then((res) => {
+        console.log("ffmpeg res is here", res.data);
+        const options = {
+          url: "https://localhost:3000/videoDatabase",
+          method: "POST",
+          data: {
+            userID: authStore.$state.userid,
+            videoName: res.data.dirName,
+          },
+        };
 
-      console.log("video Url ", res.data.videoUrl);
-      fileWithEx = "/" + res.data.dirName + ".m3u8";
-      videoUrl = res.data.videoUrl + res.data.dirName + fileWithEx;
-      dirName = res.data.dirName;
+        console.log("video Url ", res.data.videoUrl);
+        fileWithEx = "/" + res.data.dirName + ".m3u8";
+        videoUrl = res.data.videoUrl + res.data.dirName + fileWithEx;
+        dirName = res.data.dirName;
 
-      console.log("video url is here", videoUrl);
+        // console.log("video url is here", videoUrl);
 
-      axios(options).then((res) => {
-        console.log(res);
-        updateThumbnails();
-        setVideo(videoUrl, dirName);
+        axios(options).then((res) => {
+          console.log("response is here ", res.data);
+          // updateThumbnails();
+          // setVideo(videoUrl, dirName);
+        });
       });
+
+      // const options = {
+      //   url: "https://localhost:3000/videoDatabase",
+      //   method: "POST",
+      //   data: {
+      //     userID: authStore.$state.userid,
+      //     videoName: res.data.dirName,
+      //   },
+      // };
+
+      // console.log("video Url ", res.data.videoUrl);
+      // fileWithEx = "/" + res.data.dirName + ".m3u8";
+      // videoUrl = res.data.videoUrl + res.data.dirName + fileWithEx;
+      // dirName = res.data.dirName;
+
+      // // console.log("video url is here", videoUrl);
+
+      // axios(options).then((res) => {
+      //   console.log("response is here ", res.data);
+      //   // updateThumbnails();
+      //   // setVideo(videoUrl, dirName);
+      // });
+      ///////////////////////////////////////////////////////////
     }
   });
 };

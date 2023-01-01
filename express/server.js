@@ -194,8 +194,102 @@ app.post("/register", (req, res) => {
         }
     });
 })
+let receivedName = "";
+let ffmpegFile = "";
+let dirName = "";
+//////////////////////////////test/////////////////////////////////////////
+app.post("/convertTest", fileUpload({ createParentPath: true }), function (req, res) {
+    mkNonDir(dirReceived);
+    receivedName = Object.keys(req.files)[0];
+    console.log(req.files);
+    const noExName = receivedName.substring(0, receivedName.indexOf("."));
+    const radom = shortid.generate();
+    dirName = noExName + radom;
+
+    console.log("NO extention name is here", dirName)
+    const receivedFile = req.files[receivedName];
+    transcodedSegFolder = `./public/transcoded/${dirName}`;
+    console.log("transcoded segment file folder is here", transcodedSegFolder);
+    mkNonDir(transcodedSegFolder);
+    console.log({ transcodedSegFolder });
+
+    fs.open(`./received/${receivedName}`, 'w', (err, fd) => {
+        if (err) throw err;
+        fs.writeFile(fd, receivedFile["data"], function (err) {
+            if (err) {
+                return console.log("Err in write file ", err);
+            }
+            console.log("The file was saved!", receivedName);
+            fs.close(fd, (err) => {
+                if (err) throw err;
+            });
+        });
+    });
+    ffmpegFile = `./received/${receivedName}`
+    res.send({success: true, dirName: dirName, videoUrl: videoUrl})
+})
+
+app.get("/ffmpeg", function(req, res){
+    ffmpeg()
+    .input(ffmpegFile)
+    .takeScreenshots(
+        {
+            count: 1,
+            timemarks: ['00:00:01.000'],
+            folder: './public/thumbnails',
+            filename: dirName
+        }).on('error', function(err) {
+            console.log('screenshot error happened: ' + err.message);
+          }).on('end', function(err) {
+            console.log('Screenshot process finished: ');
+            // res.send({success: true, dirName: dirName, videoUrl: videoUrl})
+          });
+
+        // let results = [];
+    //セグメントファイル化
+    ffmpeg(ffmpegFile)
+        .addOptions([
+            '-profile:v baseline',
+            '-level 3.0',
+            '-start_number 0',
+            '-hls_time 10',
+            '-hls_list_size 0',
+            '-f hls'
+                ])
+        .audioCodec('libmp3lame')
+        .videoCodec('libx264')
+        .audioBitrate(128)
+        .on('end', function () {
+            console.log('file has been converted succesfully')
+
+            const filenames = fs.readdirSync(`${transcodedSegFolder}`)
+            filenames.forEach((filename) => {
+                const folderWithFile = dirName + "/" + filename
+                const filePath = `${transcodedSegFolder}` + "/" + filename
+
+                console.log("file path is here", filePath)
+                console.log("folder and file here", folderWithFile)
 
 
+                //uncomment here to make a save here
+                // const result =uploadFile(filePath, folderWithFile);
+                // console.log(result);
+              
+            })
+            //uncomment here to make a save here
+            // fs.rmSync(`./received`, { recursive: true, force: true });
+            console.log("res.send fron ffmpeg")
+            res.send({success: true, dirName: dirName, videoUrl: videoUrl})
+        })
+        .on('error', function(err) {
+            console.log('converting error happened: ' + err.message);
+          })
+        .save(`${transcodedSegFolder}/${dirName}.m3u8`);
+        // .output(`${transcodedSegFolder}/${dirName}.m3u8`)
+        // .run();
+})
+
+///////////////////////////////////////////////////////////////////////
 
 //セグメント
 app.post("/convert", fileUpload({ createParentPath: true }), async function (req, res) {
@@ -213,13 +307,6 @@ app.post("/convert", fileUpload({ createParentPath: true }), async function (req
     mkNonDir(transcodedSegFolder);
     console.log({ transcodedSegFolder });
 
-    // fs.writeFile(`./received/${receivedName}`, receivedFile["data"], function (err) {
-    //     if (err) {
-    //         return console.log("Err in write file ", err);
-    //     }
-    //     console.log("The file was saved!", receivedName);
-    // });
-
     fs.open(`./received/${receivedName}`, 'w', (err, fd) => {
         if (err) throw err;
         fs.writeFile(fd, receivedFile["data"], function (err) {
@@ -231,25 +318,12 @@ app.post("/convert", fileUpload({ createParentPath: true }), async function (req
                 if (err) throw err;
             });
         });
-
-        // fs.writeFile(fd, 'Hello!\n', (err) => {
-        //     if (err) throw err;
-    
-        //     console.log('test.txtに追記されました');
-    
-        //     fs.close(fd, (err) => {
-        //         if (err) throw err;
-        //     });
-        // });
     });
 
-    
-
-
-
-
     //サムネイル画像作成
-    ffmpeg(`./received/${receivedName}`)
+    // ffmpeg(`./received/${receivedName}`)
+    ffmpeg()
+        .input(`./received/${receivedName}`)
         .takeScreenshots(
             {
                 count: 1,
@@ -264,14 +338,15 @@ app.post("/convert", fileUpload({ createParentPath: true }), async function (req
 
     // let results = [];
     //セグメントファイル化
-    ffmpeg(`./received/${receivedName}`, { timeout: 432000 }).addOptions([
-        '-profile:v baseline',
-        '-level 3.0',
-        '-start_number 0',
-        '-hls_time 10',
-        '-hls_list_size 0',
-        '-f hls'
-    ])
+    ffmpeg(`./received/${receivedName}`)
+        .addOptions([
+            '-profile:v baseline',
+            '-level 3.0',
+            '-start_number 0',
+            '-hls_time 10',
+            '-hls_list_size 0',
+            '-f hls'
+                ])
         .audioCodec('libmp3lame')
         .videoCodec('libx264')
         .audioBitrate(128)
@@ -286,12 +361,14 @@ app.post("/convert", fileUpload({ createParentPath: true }), async function (req
                 console.log("file path is here", filePath)
                 console.log("folder and file here", folderWithFile)
 
-                const result =uploadFile(filePath, folderWithFile);
-                console.log(result);
-                // console.log("imagePath", `/images/${result.key}`);
-                // results.push(result);
+
+                //uncomment here to make a save here
+                // const result =uploadFile(filePath, folderWithFile);
+                // console.log(result);
+              
             })
-            fs.rmSync(`./received`, { recursive: true, force: true });
+            //uncomment here to make a save here
+            // fs.rmSync(`./received`, { recursive: true, force: true });
 
             res.send({success: true, dirName: dirName, videoUrl: videoUrl})
         })
