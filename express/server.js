@@ -25,9 +25,10 @@ var options = {
     key: privateKey,
     cert: certificate
 };
-
 const PORT = 3000;
+
 const app = express();
+
 const videoUrl = "https://localhost:3000/transcoded/"
 var scormName = "";
 var sourceFolder = "";
@@ -48,6 +49,7 @@ const mkNonDir = (dir) => {
 mkNonDir(dirTranscoded);
 
 
+
 app.use(bodyParser.urlencoded({
     extended: true
 }));
@@ -56,6 +58,32 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 app.use(cors({ credentials: true, origin: 'https://localhost:15173' }));
 app.use(express.static(__dirname + '/public'));
+
+
+let progressCompleted = 0;
+
+//HTTPSプロトコルに変換
+var httpsServer = https.createServer(options, app);
+const io = require('socket.io')(httpsServer,{
+    cors: {
+        origin: "https://localhost:15173",
+        credentials: true
+    }
+});
+app.set('io', io);
+
+httpsServer.listen(PORT);
+io.on('connect', function(socket){
+
+
+  // Clientにメッセージを送信
+  setInterval(() => {
+    progressCompleted = Math.trunc(progressCompleted)
+    socket.emit('xxx', { message: progressCompleted});
+  }, 1000);
+
+});
+
 
 // mongoose.connect("mongodb://root:password@mongo:27017", {
 mongoose.connect("mongodb://mongodb:27017", {
@@ -199,7 +227,7 @@ let receivedName = "";
 let ffmpegFile = "";
 let uniqueName = "";
 let videoName ="";
-//////////////////////////////test/////////////////////////////////////////
+
 app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
     mkNonDir(dirReceived);
     receivedName = Object.keys(req.files)[0];
@@ -260,6 +288,12 @@ app.get("/ffmpeg", function(req, res){
         .audioCodec('libmp3lame')
         .videoCodec('libx264')
         .audioBitrate(128)
+        .on('progress', function(progress) {
+        console.log('Processing: ' + progress.percent + '% done')
+            progressCompleted = progress.percent;
+            console.log("percentCompleted", progress.percent)
+
+        })
         .on('end', function () {
             console.log('file has been converted succesfully')
 
@@ -289,20 +323,7 @@ app.get("/ffmpeg", function(req, res){
         // .run();
 })
 
-///////////////////////////////////////////////////////////////////////
 
-
-
-// app.get("/images", function(req, res){
-//     console.log("/images/ is working")
-//     const key = req.params.objectKey
-//     console.log("key is here", key)
-//     const readStream = getFileStream(key) 
-//     // console.log("file stream is working", readStream)
-//     readStream.pipe(res)
-
-//     // res.send(readStream);
-// })
 
 app.post("/videoDatabase", function (req, res) {
     console.log(req.body.userID);
@@ -421,12 +442,8 @@ app.post("/scorm", function (req, res) {
         console.log("pathToZip", pathToZip);
         res.download(pathToZip );
 
-
-
     });
 })
 
-//HTTPSプロトコルに変換
-var httpsServer = https.createServer(options, app);
-httpsServer.listen(3000);
+
 

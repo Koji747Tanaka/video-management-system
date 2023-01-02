@@ -12,7 +12,15 @@
             </el-col>
           </el-row>
           <el-row>
-            <el-col> hello </el-col>
+            <el-col :span="2" />
+            <el-col :span="12">
+              <el-progress
+                :text-inside="true"
+                :stroke-width="24"
+                :percentage="progressValue"
+                status="success"
+              />
+            </el-col>
           </el-row>
           <el-row>
             <el-col :span="12">
@@ -67,19 +75,33 @@ import axios from "axios";
 import { userAuthStore } from "../store/auth.store.js";
 import router from "../router";
 import Preview from "./Preview.vue";
+import io from "socket.io-client";
 
+// const io = require('socket.io-client');
 const authStore = userAuthStore();
 const file = ref("");
-
 const sourceFolder = ref("");
 const previewName = ref("Click a video");
 let videos = ref([]);
 
 const previewUrl = ref("");
 const folderNameZip = ref("");
+const progressValue = ref(0);
+const socket = io("https://localhost:3000");
 
 onMounted(() => {
   updateThumbnails();
+});
+
+socket.on("connect", (msg) => {
+  console.log("socket.id", socket.id);
+  console.log("接続できたか?", socket.connected);
+});
+
+// Serverからメッセージを受信
+socket.on("xxx", (data) => {
+  console.log(`type: ${typeof data}   data: ${data.message}`);
+  progressValue.value = data.message;
 });
 
 const updateThumbnails = () => {
