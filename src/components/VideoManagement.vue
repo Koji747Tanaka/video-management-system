@@ -37,6 +37,17 @@
               <el-button @click="scormDownload">ダウンロード</el-button>
             </el-col>
           </el-row>
+          <el-row>
+            <el-col :span="4">
+              <span> search </span>
+            </el-col>
+            <el-col :span="8">
+              <el-input v-model="search" />
+            </el-col>
+            <el-col :span="12">
+              <el-button @click="searchVideo">検索</el-button>
+            </el-col>
+          </el-row>
         </el-col>
         <el-col :span="12">
           {{ previewName }}
@@ -83,9 +94,11 @@ const file = ref("");
 const sourceFolder = ref("");
 const previewName = ref("Click a video");
 let videos = ref([]);
+let videoFullList = ref([]);
 
 const previewUrl = ref("");
 const folderNameZip = ref("");
+const search = ref("");
 const progressValue = ref(0);
 const socket = io("https://localhost:3000");
 
@@ -95,7 +108,7 @@ onMounted(() => {
 
 socket.on("connect", (msg) => {
   console.log("socket.id", socket.id);
-  console.log("接続できたか?", socket.connected);
+  console.log("接続できた?", socket.connected);
 });
 
 // Serverからメッセージを受信
@@ -104,8 +117,24 @@ socket.on("xxx", (data) => {
   progressValue.value = data.message;
 });
 
+const searchVideo = () => {
+  console.log(search.value);
+  if (search.value != "") {
+    videos.value = [];
+    videoFullList.value.forEach((video) => {
+      console.log(video.videoName);
+      if (video.videoName.startsWith(search.value)) {
+        videos.value.push(video);
+      }
+    });
+  } else {
+    videos.value = videoFullList.value;
+  }
+};
+
 const updateThumbnails = () => {
   videos.value = [];
+  videoFullList.value = [];
   const API_URL = "https://localhost:3000/";
   const authStore = userAuthStore();
 
@@ -120,6 +149,7 @@ const updateThumbnails = () => {
         var objects = res.data.objects;
         objects.forEach((object) => {
           videos.value.push(object);
+          videoFullList.value.push(object);
         });
       } else {
         console.log("Response is here: ", res.data);

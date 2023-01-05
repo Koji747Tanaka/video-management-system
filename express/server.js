@@ -73,17 +73,15 @@ const io = require('socket.io')(httpsServer,{
 app.set('io', io);
 
 httpsServer.listen(PORT);
+
 io.on('connect', function(socket){
-
-
-  // Clientにメッセージを送信
-  setInterval(() => {
-    progressCompleted = Math.trunc(progressCompleted)
-    socket.emit('xxx', { message: progressCompleted});
-  }, 1000);
-
-});
-
+    // Clientにメッセージを送信
+    setInterval(() => {
+      progressCompleted = Math.trunc(progressCompleted)
+      socket.emit('xxx', { message: progressCompleted});
+    }, 1000);
+  
+  });
 
 // mongoose.connect("mongodb://root:password@mongo:27017", {
 mongoose.connect("mongodb://mongodb:27017", {
@@ -229,6 +227,8 @@ let uniqueName = "";
 let videoName ="";
 
 app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
+    
+
     mkNonDir(dirReceived);
     receivedName = Object.keys(req.files)[0];
     console.log(req.files);
@@ -296,6 +296,7 @@ app.get("/ffmpeg", function(req, res){
         })
         .on('end', function () {
             console.log('file has been converted succesfully')
+            progressCompleted =0;
 
             const filenames = fs.readdirSync(`${transcodedSegFolder}`)
             filenames.forEach((filename) => {
