@@ -31,28 +31,11 @@ onUpdated(() => {
   console.log("props.vidoURl is here", props.videoUrl);
   hls.attachMedia(video);
 });
-
-// const videoPlay = () => {
-//   console.log("played url is ", props.videoUrl);
-//   var video = document.getElementById("video");
-//   var hls = new Hls();
-//   hls.loadSource(props.videoUrl);
-//   hls.attachMedia(video);
-//   video.play();
-// };
 </script>
 <style>
 video {
   width: 90%;
-}
-
-.width250 {
-  width: 250px;
-}
-.width200 {
-  width: 200px;
-}
-.width150 {
-  width: 150px;
+  max-width: 500px;
+  max-height: 300px;
 }
 </style>

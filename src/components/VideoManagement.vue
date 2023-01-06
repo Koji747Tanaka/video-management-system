@@ -172,8 +172,6 @@ const sendFile = async () => {
   axios.post("https://localhost:3000/convert", formData).then((res) => {
     console.log({ res });
     if (res.data.success == true) {
-      console.log("test try");
-      //////////////////////////test////////////////////////////////
       axios.get("https://localhost:3000/ffmpeg").then((res) => {
         console.log("ffmpeg res is here", res.data);
         const options = {
@@ -185,8 +183,6 @@ const sendFile = async () => {
             uniqueName: res.data.uniqueName,
           },
         };
-
-        console.log("video Url ", res.data.videoUrl);
         fileWithEx = "/" + res.data.uniqueName + ".m3u8";
         videoUrl = res.data.videoUrl + res.data.uniqueName + fileWithEx;
         uniqueName = res.data.uniqueName;

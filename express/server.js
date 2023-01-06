@@ -26,16 +26,11 @@ var options = {
     cert: certificate
 };
 const PORT = 3000;
-
 const app = express();
-
 const videoUrl = "https://localhost:3000/transcoded/"
 var scormName = "";
 var sourceFolder = "";
-
 var sourcePath = "";
-
-var transcodedSeg = ""
 
 //ディレクトリーの作成
 var dirReceived = './received';
@@ -47,8 +42,6 @@ const mkNonDir = (dir) => {
 }
 
 mkNonDir(dirTranscoded);
-
-
 
 app.use(bodyParser.urlencoded({
     extended: true
@@ -70,10 +63,9 @@ const io = require('socket.io')(httpsServer,{
         credentials: true
     }
 });
+
 app.set('io', io);
-
 httpsServer.listen(PORT);
-
 io.on('connect', function(socket){
     // Clientにメッセージを送信
     setInterval(() => {
@@ -98,7 +90,6 @@ const userSchema = new mongoose.Schema({
 });
 
 const User = new mongoose.model("User", userSchema);
-
 const videoSchema = new mongoose.Schema({
     userid: String,
     videoName: String,
@@ -107,8 +98,6 @@ const videoSchema = new mongoose.Schema({
 
 const Video = new mongoose.model("Video", videoSchema);
 
-app.get("/register", (req, res) => {
-});
 
 // Create a token from a payload { id: userID, name: userName }
 function createToken(id, name) {
@@ -124,8 +113,6 @@ function verifyToken(token) {
 app.post("/login", function (req, res) {
     const userName = req.body.username;
     const password = md5(req.body.password);
-
-    // const userID = isAuthenticated(userName, password);
 
     User.findOne({ username: userName }, function (err, foundUser) {
         if (err) {
@@ -171,19 +158,13 @@ app.get("/login", function (req, res) {
             userID: decoded.id
         }
         res.status(200).json(responseJson);
-        // console.log("decoded token ", decoded);
     }
     catch (err) {
         const status = 401
         const message = 'Unauthorized'
         res.send("Not authorized. Better login");
-        // res.status(status).json({ status, message })
     }
 });
-
-
-app.get("/convert", function (req, res) {
-})
 
 app.get("/logout", function (req, res) {
     res.cookie('JWTcookie', "deleted", { maxAge: 0, httpOnly: true });
@@ -191,11 +172,6 @@ app.get("/logout", function (req, res) {
 })
 
 app.post("/register", (req, res) => {
-    console.log("req body username is : " + req.body.username);
-    console.log("req body password is : " + req.body.password);
-    const userName = req.body.username;
-    // res.send("Express register received the request");
-
     const newUser = new User({
         username: req.body.username,
         password: md5(req.body.password)
@@ -203,14 +179,11 @@ app.post("/register", (req, res) => {
     newUser.save((error, user) => {
         if (error) {
             if (error.code === 11000) {
-                //Duplicate key
                 return res.json({ status: 'error', error: 'Username already in use.' });
             }
             throw error;
-
         } else {
             const accessToken = createToken(user.id, user.username);
-
             const responseJson = {
                 success: true,
                 username: user.username,
@@ -227,21 +200,16 @@ let uniqueName = "";
 let videoName ="";
 
 app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
-    
-
     mkNonDir(dirReceived);
     receivedName = Object.keys(req.files)[0];
     console.log(req.files);
     videoName = receivedName.substring(0, receivedName.indexOf("."));
     const radom = shortid.generate();
     uniqueName = videoName + radom;
-
-    console.log("NO extention name is here", videoName)
     const receivedFile = req.files[receivedName];
     transcodedSegFolder = `./public/transcoded/${uniqueName}`;
     console.log("transcoded segment file folder is here", transcodedSegFolder);
     mkNonDir(transcodedSegFolder);
-    console.log({ transcodedSegFolder });
 
     fs.open(`./received/${receivedName}`, 'w', (err, fd) => {
         if (err) throw err;
@@ -274,7 +242,6 @@ app.get("/ffmpeg", function(req, res){
             console.log('Screenshot process finished: ');
           });
 
-        // let results = [];
     //セグメントファイル化
     ffmpeg(ffmpegFile)
         .addOptions([
@@ -302,29 +269,15 @@ app.get("/ffmpeg", function(req, res){
             filenames.forEach((filename) => {
                 const folderWithFile = uniqueName + "/" + filename
                 const filePath = `${transcodedSegFolder}` + "/" + filename
-
-                console.log("file path is here", filePath)
-                console.log("folder and file here", folderWithFile)
-                //uncomment here to make a save here
                 const result =uploadFile(filePath, folderWithFile);
-                // console.log(result);
-              
             })
-            //uncomment here to make a save here
-            // fs.rmSync(`./received`, { recursive: true, force: true });
-            console.log("res.send fron ffmpeg")
-            // res.send({success: true, uniqueName: uniqueName, videoUrl: videoUrl})
             res.send({success: true, uniqueName: uniqueName, videoUrl: videoUrl, videoName: videoName})
         })
         .on('error', function(err) {
             console.log('converting error happened: ' + err.message);
           })
         .save(`${transcodedSegFolder}/${uniqueName}.m3u8`);
-        // .output(`${transcodedSegFolder}/${uniqueName}.m3u8`)
-        // .run();
 })
-
-
 
 app.post("/videoDatabase", function (req, res) {
     console.log(req.body.userID);
@@ -336,7 +289,6 @@ app.post("/videoDatabase", function (req, res) {
     newVideo.save((error, video) => {
         if (error) {
             if (error.code === 11000) {
-                //Duplicate key
                 return res.json({ status: 'error', error: 'Username already in use.' });
             }
             throw error;
@@ -359,7 +311,6 @@ app.get("/videoThumbnails", function (req, res) {
             if (foundVideoArray) {
                 var files = fs.readdirSync('./public/thumbnails');
                 foundVideoArray.forEach(video => {
-                    // console.log("files", files);
                     var foundFile = files.find(file => {
                         if (file.substring(0, file.indexOf(".")) == video.uniqueName) {
                             return file;
@@ -380,13 +331,10 @@ app.get("/videoThumbnails", function (req, res) {
                             videoName: video.videoName,
                             uniqueName: nameWithoutEx,
                         }
-
                         usersFiles.push(object);
-                        // usersVideoNames.push(foundFile.substring(0, foundFile.indexOf(".")))
                     }
                 })
                 console.log("found video name is here", usersFiles);
-
                 res.send({ success: true, objects: usersFiles });
             }
             else {

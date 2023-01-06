@@ -4,7 +4,6 @@ import ElementPlus from 'element-plus'
 import router from './router'
 import App from './App.vue'
 import './assets/main.css'
-import vueCookies from 'vue-cookies'
 
 // import { userAuthStore } from "./store/auth.store"
 const app = createApp(App)
