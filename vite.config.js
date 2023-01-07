@@ -27,16 +27,6 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
-  // server: {
-  //   proxy: {
-  //     '/api': {
-  //       target: 'http://video-express:3000',
-  //       changeOrigin: true,
-  //       secure: false,
-  //       ws: true,
-  //     }
-  //   }
-  // }
 })
 
 

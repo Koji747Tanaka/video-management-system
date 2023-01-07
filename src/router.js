@@ -8,7 +8,7 @@ import { userAuthStore } from "./store/auth.store.js";
 
 const routes = [
     {
-        path: '/login',
+        path: '/',
         name: 'login',
         component: Login,
     },
@@ -50,7 +50,7 @@ router.beforeEach((to, from, next) => {
         if (!authStore.isLogin) {
             // 認証されていない時、認証画面へ遷移
             next({
-                path: '/login',
+                path: '/',
                 query: {
                     redirect: to.fullPath
                 }
