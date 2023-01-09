@@ -71,11 +71,11 @@ io.on('connect', function(socket){
     setInterval(() => {
       progressCompleted = Math.trunc(progressCompleted)
       socket.emit('xxx', { message: progressCompleted});
-    }, 1000);
-  
+    }, 5000);
+
   });
 
-// mongoose.connect("mongodb://root:password@mongo:27017", {
+// mongoose.connect("mongodb://localhost:27017", {
 mongoose.connect("mongodb://mongodb:27017", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -109,6 +109,10 @@ function verifyToken(token) {
         return decoded;
     })
 }
+
+app.get("/", function(req, res){
+    res.sendFile(__dirname + '/index.html');
+})
 
 app.post("/login", function (req, res) {
     const userName = req.body.username;

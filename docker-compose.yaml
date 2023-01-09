@@ -6,7 +6,6 @@ services:
     build:
       context: ./express
       dockerfile: Dockerfile.express
-
     ports:
       - 3000:3000
 
@@ -15,6 +14,7 @@ services:
       - transcoded_videos:/app/public/transcoded
       - thumbnails:/app/public/thumbnails
       - ./express:/app
+
     tty: true
     stdin_open: true
     # depends_on:
@@ -40,7 +40,7 @@ services:
   mongo_express:
     image: mongo-express:latest
     container_name: mongo_express
-    restart: unless-stopped
+    restart: always
     ports:
       - 8081:8081
     environment:
@@ -48,35 +48,32 @@ services:
       ME_CONFIG_MONGODB_ADMINPASSWORD: password
       ME_CONFIG_MONGODB_SERVER: mongodb
       ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017
+      # ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017
       # ME_CONFIG_BASICAUTH_USERNAME: admin
       # ME_CONFIG_BASICAUTH_PASSWORD: Password1
-      # depends_on:
-      #   - mongo
+
+    # depends_on:
+      # mongodb:
+        # condition: service_completed_successfully
+
       # networks:
       #   - mongo-express
 
   dev:
     container_name: video-dev
-
     image: video-dev:latest
-
     build:
       context: .
       dockerfile: Dockerfile
-
     ports:
       - 15173:5173
-
     volumes:
       - video_dev_node_modules:/app/node_modules
       - .:/app
     depends_on:
       - express
-
     tty: true
-
     stdin_open: true
-
     networks:
       - default
 
