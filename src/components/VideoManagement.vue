@@ -14,22 +14,14 @@
           <el-row>
             <el-col :span="2" />
             <el-col :span="12">
-              <el-progress
-                :text-inside="true"
-                :stroke-width="24"
-                :percentage="progressValue"
-                status="success"
-              />
+              <el-progress :text-inside="true" :stroke-width="24" :percentage="progressValue" status="success" />
             </el-col>
           </el-row>
           <el-row>
             <el-col :span="12">
               <el-form label-width="160px" style="max-width: 460px">
                 <el-form-item label="SCORM パッケージ名">
-                  <el-input
-                    placeholder="Zip ファイル名"
-                    v-model="folderNameZip"
-                  />
+                  <el-input placeholder="Zip ファイル名" v-model="folderNameZip" />
                 </el-form-item>
               </el-form>
             </el-col>
@@ -58,18 +50,11 @@
       <el-row :gutter="10">
         <template v-for="video in videos">
           <el-col :span="6">
-            <div
-              @click="
-                setVideo(video.videoUrl, video.uniqueName, video.videoName)
-              "
-            >
-              <span>{{ video.videoName }}</span
-              ><br />
-              <el-image
-                style="height: 200px"
-                :src="video.thumbUrl"
-                class="videoDiv"
-              />
+            <div @click="
+              setVideo(video.videoUrl, video.uniqueName, video.videoName)
+            ">
+              <span>{{ video.videoName }}</span><br />
+              <el-image style="height: 200px" :src="video.thumbUrl" class="videoDiv" />
             </div>
           </el-col>
         </template>
@@ -88,6 +73,7 @@ import router from "../router";
 import Preview from "./Preview.vue";
 import io from "socket.io-client";
 
+const BASE_URL = "https://13.230.214.179:3000";
 // const io = require('socket.io-client');
 const authStore = userAuthStore();
 const file = ref("");
@@ -100,7 +86,7 @@ const previewUrl = ref("");
 const folderNameZip = ref("");
 const search = ref("");
 const progressValue = ref(0);
-const socket = io("https://localhost:3000");
+const socket = io(BASE_URL);
 
 onMounted(() => {
   updateThumbnails();
@@ -135,11 +121,11 @@ const searchVideo = () => {
 const updateThumbnails = () => {
   videos.value = [];
   videoFullList.value = [];
-  const API_URL = "https://localhost:3000/";
+
   const authStore = userAuthStore();
 
   axios
-    .get(API_URL + "videoThumbnails", {
+    .get(BASE_URL + "videoThumbnails", {
       params: { userID: authStore.$state.userid },
     })
     .then((res) => {
@@ -169,13 +155,13 @@ const sendFile = async () => {
   console.log("This file is gonna be sent", file.value.files[0]);
   console.log("form data", formData);
 
-  axios.post("https://localhost:3000/convert", formData).then((res) => {
+  axios.post(BASE_URL + "/convert", formData).then((res) => {
     console.log({ res });
     if (res.data.success == true) {
-      axios.get("https://localhost:3000/ffmpeg").then((res) => {
+      axios.get(BASE_URL + "/ffmpeg").then((res) => {
         console.log("ffmpeg res is here", res.data);
         const options = {
-          url: "https://localhost:3000/videoDatabase",
+          url: BASE_URL + "/videoDatabase",
           method: "POST",
           data: {
             userID: authStore.$state.userid,
@@ -198,7 +184,7 @@ const sendFile = async () => {
 
 const scormDownload = () => {
   const options = {
-    url: "https://localhost:3000/scormProperty",
+    url: BASE_URL + "/scormProperty",
     method: "POST",
     data: {
       scormName: folderNameZip.value,
@@ -210,7 +196,7 @@ const scormDownload = () => {
     console.log("res data success here", res.data.success);
     if (res.data.success) {
       axios
-        .post("https://localhost:3000/scorm", {
+        .post(BASE_URL + "/scorm", {
           responseType: "arraybuffer",
           headers: { Accept: "application/zip" },
         })

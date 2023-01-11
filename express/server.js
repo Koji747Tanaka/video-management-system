@@ -16,7 +16,7 @@ const SECRET_KEY = process.env.ACCESS_TOKEN_SECRET
 const expiresIn = '30min'
 const ffmpeg = require('./ffmpeg');
 const shortid = require('shortid');
-const { uploadFile} = require('./s3')
+const { uploadFile } = require('./s3')
 
 //自己発行証明書
 var privateKey = fs.readFileSync(__dirname + '/cert/localhost-key.pem');
@@ -57,7 +57,7 @@ let progressCompleted = 0;
 
 //HTTPSプロトコルに変換
 var httpsServer = https.createServer(options, app);
-const io = require('socket.io')(httpsServer,{
+const io = require('socket.io')(httpsServer, {
     cors: {
         origin: "https://localhost:15173",
         credentials: true
@@ -66,14 +66,14 @@ const io = require('socket.io')(httpsServer,{
 
 app.set('io', io);
 httpsServer.listen(PORT);
-io.on('connect', function(socket){
+io.on('connect', function (socket) {
     // Clientにメッセージを送信
     setInterval(() => {
-      progressCompleted = Math.trunc(progressCompleted)
-      socket.emit('xxx', { message: progressCompleted});
+        progressCompleted = Math.trunc(progressCompleted)
+        socket.emit('xxx', { message: progressCompleted });
     }, 5000);
 
-  });
+});
 
 // mongoose.connect("mongodb://localhost:27017", {
 mongoose.connect("mongodb://mongodb:27017", {
@@ -110,7 +110,7 @@ function verifyToken(token) {
     })
 }
 
-app.get("/", function(req, res){
+app.get("/", function (req, res) {
     res.sendFile(__dirname + '/index.html');
 })
 
@@ -201,7 +201,7 @@ app.post("/register", (req, res) => {
 let receivedName = "";
 let ffmpegFile = "";
 let uniqueName = "";
-let videoName ="";
+let videoName = "";
 
 app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
     mkNonDir(dirReceived);
@@ -228,23 +228,23 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
         });
     });
     ffmpegFile = `./received/${receivedName}`
-    res.send({success: true, uniqueName: uniqueName, videoUrl: videoUrl, videoName: videoName})
+    res.send({ success: true, uniqueName: uniqueName, videoUrl: videoUrl, videoName: videoName })
 })
 
-app.get("/ffmpeg", function(req, res){
+app.get("/ffmpeg", function (req, res) {
     ffmpeg()
-    .input(ffmpegFile)
-    .takeScreenshots(
-        {
-            count: 1,
-            timemarks: ['00:00:01.000'],
-            folder: './public/thumbnails',
-            filename: uniqueName
-        }).on('error', function(err) {
-            console.log('screenshot error happened: ' + err.message);
-          }).on('end', function(err) {
-            console.log('Screenshot process finished: ');
-          });
+        .input(ffmpegFile)
+        .takeScreenshots(
+            {
+                count: 1,
+                timemarks: ['00:00:01.000'],
+                folder: './public/thumbnails',
+                filename: uniqueName
+            }).on('error', function (err) {
+                console.log('screenshot error happened: ' + err.message);
+            }).on('end', function (err) {
+                console.log('Screenshot process finished: ');
+            });
 
     //セグメントファイル化
     ffmpeg(ffmpegFile)
@@ -255,31 +255,31 @@ app.get("/ffmpeg", function(req, res){
             '-hls_time 10',
             '-hls_list_size 0',
             '-f hls'
-                ])
+        ])
         .audioCodec('libmp3lame')
         .videoCodec('libx264')
         .audioBitrate(128)
-        .on('progress', function(progress) {
-        console.log('Processing: ' + progress.percent + '% done')
+        .on('progress', function (progress) {
+            console.log('Processing: ' + progress.percent + '% done')
             progressCompleted = progress.percent;
             console.log("percentCompleted", progress.percent)
 
         })
         .on('end', function () {
             console.log('file has been converted succesfully')
-            progressCompleted =0;
+            progressCompleted = 0;
 
             const filenames = fs.readdirSync(`${transcodedSegFolder}`)
             filenames.forEach((filename) => {
                 const folderWithFile = uniqueName + "/" + filename
                 const filePath = `${transcodedSegFolder}` + "/" + filename
-                const result =uploadFile(filePath, folderWithFile);
+                const result = uploadFile(filePath, folderWithFile);
             })
-            res.send({success: true, uniqueName: uniqueName, videoUrl: videoUrl, videoName: videoName})
+            res.send({ success: true, uniqueName: uniqueName, videoUrl: videoUrl, videoName: videoName })
         })
-        .on('error', function(err) {
+        .on('error', function (err) {
             console.log('converting error happened: ' + err.message);
-          })
+        })
         .save(`${transcodedSegFolder}/${uniqueName}.m3u8`);
 })
 
@@ -393,7 +393,7 @@ app.post("/scorm", function (req, res) {
         console.log(msg);
         const pathToZip = "./scormPackages/" + getMostRecentFile("./scormPackages").file;
         console.log("pathToZip", pathToZip);
-        res.download(pathToZip );
+        res.download(pathToZip);
 
     });
 })

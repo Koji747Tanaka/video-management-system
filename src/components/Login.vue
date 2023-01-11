@@ -4,26 +4,15 @@
     <el-container class="margin-top-little">
       <el-form class="login-form" label-width="100px">
         <el-form-item label="アカウント名">
-          <el-input
-            v-model="username"
-            placeholder="username"
-            required
-          ></el-input>
+          <el-input v-model="username" placeholder="username" required></el-input>
         </el-form-item>
         <el-form-item label="パスワード">
-          <el-input
-            v-model="password"
-            type="password"
-            placeholder="password"
-            required
-          >
+          <el-input v-model="password" type="password" placeholder="password" required>
           </el-input>
         </el-form-item>
         <div id="elButton">
           <!-- <el-form-item> -->
-          <el-button id="elButton" type="primary" plain @click="onClickSubmit()"
-            >ログイン</el-button
-          >
+          <el-button id="elButton" type="primary" plain @click="onClickSubmit()">ログイン</el-button>
           <!-- </el-form-item> -->
         </div>
       </el-form>
@@ -55,12 +44,13 @@ import {
   onUnmounted,
   ref,
 } from "vue";
+const BASE_URL = "https://13.230.214.179:3000";
 
 onMounted(() => {
-  const API_URL = "https://localhost:3000/";
+  const API_URL = BASE_URL;
   const authStore = userAuthStore();
 
-  axios.get(API_URL + "login", { withCredentials: true }).then((res) => {
+  axios.get(BASE_URL + "/login", { withCredentials: true }).then((res) => {
     if (res.data.success == true) {
       const id = res.data.userID;
       const username = res.data.username;
@@ -74,7 +64,7 @@ onMounted(() => {
   });
 });
 
-const API_URL = "https://localhost:3000/";
+
 const username = ref("");
 const password = ref("");
 const authStore = userAuthStore();
@@ -86,7 +76,7 @@ const config = {
 
 const onClickSubmit = () => {
   const options = {
-    url: "https://localhost:3000/login",
+    url: BASE_URL + "/login",
     method: "POST",
     data: {
       username: username.value,

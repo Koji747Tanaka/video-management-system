@@ -2,10 +2,11 @@
 import axios from "axios";
 import { userAuthStore } from "./store/auth.store.js";
 const authStore = userAuthStore();
+const BASE_URL = "https://13.230.214.179:3000";
 const logout = () => {
   authStore.clearUser();
   const options = {
-    url: "https://localhost:3000/logout",
+    url: BASE_URL + "/logout",
     method: "GET",
     withCredentials: true,
   };
@@ -20,13 +21,7 @@ const logout = () => {
 <template>
   <el-menu id="top-menu">
     <el-menu-item index="0">
-      <img
-        src="./img/chibalogoside.jpeg"
-        alt="Chiba University Logo"
-        class="logo"
-        width="200"
-        height="50"
-      />
+      <img src="./img/chibalogoside.jpeg" alt="Chiba University Logo" class="logo" width="200" height="50" />
     </el-menu-item>
 
     <div class="flex-grow" />

@@ -2,18 +2,18 @@ version: '3.9'
 services:
   express:
     container_name: video-express
-    image: video-express:latest
+    image: video-express:latest #
     build:
       context: ./express
       dockerfile: Dockerfile.express
     ports:
       - 3000:3000
 
-    volumes:
-      - video_express_node:/app/node_modules
-      - transcoded_videos:/app/public/transcoded
-      - thumbnails:/app/public/thumbnails
-      - ./express:/app
+    #   volumes:
+    #     - video_express_node:/app/node_modules
+    #     - transcoded_videos:/app/public/transcoded
+    #     - thumbnails:/app/public/thumbnails
+    #     - ./express:/app
 
     tty: true
     stdin_open: true
@@ -31,8 +31,8 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: password
     ports:
       - 27017:27017
-    volumes:
-      - ./database-data:/data/db
+    # volumes:
+    #   - ./database-data:/data/db
     # networks:
     #   - default
     #   - mongo-express
@@ -52,12 +52,13 @@ services:
       # ME_CONFIG_BASICAUTH_USERNAME: admin
       # ME_CONFIG_BASICAUTH_PASSWORD: Password1
 
-    # depends_on:
+      # depends_on:
       # mongodb:
-        # condition: service_completed_successfully
+      # condition: service_completed_successfully
 
       # networks:
       #   - mongo-express
+
 
   dev:
     container_name: video-dev
