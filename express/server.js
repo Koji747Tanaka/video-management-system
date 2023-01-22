@@ -71,7 +71,7 @@ io.on('connect', function (socket) {
     setInterval(() => {
         progressCompleted = Math.trunc(progressCompleted)
         socket.emit('xxx', { message: progressCompleted });
-    }, 5000);
+    }, 2000);
 
 });
 
@@ -152,7 +152,7 @@ app.get("/login", function (req, res) {
     var JWTcookie = req.cookies.JWTcookie;
     console.log("JWT cookie is here", req.cookies.JWTcookie);
     try {
-        console.log("veryfy token is here", verifyToken(JWTcookie));
+        // console.log("veryfy token is here", verifyToken(JWTcookie));
         const decoded = jwt.verify(JWTcookie, SECRET_KEY, function (err, decoded) {
             return decoded;
         })

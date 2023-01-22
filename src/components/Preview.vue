@@ -1,10 +1,6 @@
 <template>
   <div>
-    <div>
-      <video id="video" controls playsinline loop></video>
-      <!-- <button @click="videoPlay">video play</button> -->
-      <!-- <span>{{ props.videoUrl }}</span> -->
-    </div>
+    <video id="video" controls playsinline loop></video>
   </div>
 </template>
 
@@ -34,8 +30,10 @@ onUpdated(() => {
 </script>
 <style>
 video {
-  width: 90%;
-  max-width: 500px;
-  max-height: 300px;
+  width: 540px;
+  height: 300px;
+  object-fit: contain;
+  /* max-width: 500px; */
+  /* max-height: 300px; */
 }
 </style>

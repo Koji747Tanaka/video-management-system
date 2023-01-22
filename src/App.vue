@@ -2,7 +2,8 @@
 import axios from "axios";
 import { userAuthStore } from "./store/auth.store.js";
 const authStore = userAuthStore();
-const BASE_URL = "https://13.230.214.179:3000";
+// const BASE_URL = "https://13.230.214.179:3000";
+const BASE_URL = "https://localhost:3000";
 const logout = () => {
   authStore.clearUser();
   const options = {

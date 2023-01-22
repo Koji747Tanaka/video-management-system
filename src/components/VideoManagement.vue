@@ -1,26 +1,28 @@
 <template>
   <el-container>
-    <el-main>
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <el-row>
-            <el-col :span="12">
+    <el-main style="margin: 20px">
+      <el-row :gutter="20" style="margin-bottom: 80px">
+        <el-col :span="13" style="padding-left: 15px">
+          <el-row justify="start">
+            <el-col :span="12" align="left">
               <input ref="file" v-on:change="handleFileUpload()" type="file" />
             </el-col>
-            <el-col :span="12">
+            <el-col :span="8" align="right">
               <el-button @click="sendFile">セグメント化</el-button>
             </el-col>
           </el-row>
           <el-row>
-            <el-col :span="2" />
-            <el-col :span="12">
+            <el-col :span="5" align="left">
+              変換処理{{ progressValue }}%終了:
+            </el-col>
+            <el-col :span="15">
               <el-progress :text-inside="true" :stroke-width="24" :percentage="progressValue" status="success" />
             </el-col>
           </el-row>
           <el-row>
-            <el-col :span="12">
-              <el-form label-width="160px" style="max-width: 460px">
-                <el-form-item label="SCORM パッケージ名">
+            <el-col :span="12" align="left">
+              <el-form style="max-width: 460px">
+                <el-form-item label="SCORM パッケージ名:">
                   <el-input placeholder="Zip ファイル名" v-model="folderNameZip" />
                 </el-form-item>
               </el-form>
@@ -29,40 +31,44 @@
               <el-button @click="scormDownload">ダウンロード</el-button>
             </el-col>
           </el-row>
-          <el-row>
-            <el-col :span="4">
-              <span> search </span>
-            </el-col>
-            <el-col :span="8">
-              <el-input v-model="search" />
-            </el-col>
-            <el-col :span="12">
-              <el-button @click="searchVideo">検索</el-button>
-            </el-col>
-          </el-row>
+
         </el-col>
-        <el-col :span="12">
-          {{ previewName }}
-          <Preview :name="name" :videoUrl="previewUrl" />
+        <el-col :span="10" align="center">
+          <div>
+            <Preview :videoUrl="previewUrl" align="right" />
+            <div align="center">
+              {{ previewName }}
+            </div>
+          </div>
         </el-col>
       </el-row>
 
+      <el-row>
+        <el-col :span="2">
+          <span>動画検索:</span>
+        </el-col>
+        <el-col :span="5" align="left">
+          <el-input v-model="search" />
+        </el-col>
+        <el-col :span="2">
+          <el-button @click="searchVideo">検索</el-button>
+        </el-col>
+      </el-row>
       <el-row :gutter="10">
         <template v-for="video in videos">
           <el-col :span="6">
             <div @click="
               setVideo(video.videoUrl, video.uniqueName, video.videoName)
             ">
+              <!-- <span>{{ video.videoName }}</span><br /> -->
+              <el-image style="height: 200px" :src="video.thumbUrl" class="videoDiv round-image" /><br />
               <span>{{ video.videoName }}</span><br />
-              <el-image style="height: 200px" :src="video.thumbUrl" class="videoDiv" />
             </div>
           </el-col>
         </template>
       </el-row>
     </el-main>
   </el-container>
-
-  <el-container> </el-container>
 </template>
 
 <script setup>
@@ -73,7 +79,8 @@ import router from "../router";
 import Preview from "./Preview.vue";
 import io from "socket.io-client";
 
-const BASE_URL = "https://13.230.214.179:3000";
+// const BASE_URL = "https://13.230.214.179:3000";
+const BASE_URL = "https://localhost:3000";
 // const io = require('socket.io-client');
 const authStore = userAuthStore();
 const file = ref("");
@@ -125,7 +132,7 @@ const updateThumbnails = () => {
   const authStore = userAuthStore();
 
   axios
-    .get(BASE_URL + "videoThumbnails", {
+    .get(BASE_URL + "/videoThumbnails", {
       params: { userID: authStore.$state.userid },
     })
     .then((res) => {
@@ -238,5 +245,9 @@ const setVideo = (videoUrl, uniqueName, videoName) => {
 
 .videoDiv {
   cursor: pointer;
+}
+
+.round-image {
+  border-radius: 10%;
 }
 </style>

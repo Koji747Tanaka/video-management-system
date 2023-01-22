@@ -18,6 +18,8 @@
       </el-form>
     </el-container>
 
+    <!-- <p style="color: red;">アカウント名、またはパスワードが間違っています。</p> -->
+
     <el-container class="align-centre margin-top">
       <div class="block-grey">
         <p>------------------------------------</p>
@@ -44,7 +46,8 @@ import {
   onUnmounted,
   ref,
 } from "vue";
-const BASE_URL = "https://13.230.214.179:3000";
+// const BASE_URL = "https://13.230.214.179:3000";
+const BASE_URL = "https://localhost:3000";
 
 onMounted(() => {
   const API_URL = BASE_URL;
