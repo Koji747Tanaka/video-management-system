@@ -24,7 +24,7 @@ export const userAuthStore = defineStore({
             this.username = user;
         },
         clearUser() {
-            this.user = null;
+            this.username = "";
             this.isLogin = false;
             router.push("/");
         },

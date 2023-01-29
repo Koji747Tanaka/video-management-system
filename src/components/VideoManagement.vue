@@ -2,13 +2,18 @@
   <el-container>
     <el-main style="margin: 20px">
       <el-row :gutter="20" style="margin-bottom: 80px">
-        <el-col :span="13" style="padding-left: 15px">
+        <el-col :span="13" style="padding-left: 30px">
           <el-row justify="start">
-            <el-col :span="12" align="left">
+            <el-col :span="5" align="left">
+              MP4ファイル選択:
+            </el-col>
+            <el-col :span="11" align="left">
               <input ref="file" v-on:change="handleFileUpload()" type="file" />
             </el-col>
-            <el-col :span="8" align="right">
-              <el-button @click="sendFile">セグメント化</el-button>
+            <el-col :span="3" align="right">
+              <el-tooltip content="配信用のファイルに変換されます" placement="top" effect="light">
+                <el-button @click="sendFile">セグメント化</el-button>
+              </el-tooltip>
             </el-col>
           </el-row>
           <el-row>
@@ -19,6 +24,11 @@
               <el-progress :text-inside="true" :stroke-width="24" :percentage="progressValue" status="success" />
             </el-col>
           </el-row>
+          <el-row style="margin-bottom: 30px">
+            <el-col class="bottom-line" :span="20">
+            </el-col>
+
+          </el-row>
           <el-row>
             <el-col :span="12" align="left">
               <el-form style="max-width: 460px">
@@ -28,12 +38,22 @@
               </el-form>
             </el-col>
             <el-col :span="12">
-              <el-button @click="scormDownload">ダウンロード</el-button>
+              <el-tooltip content="選択されたSCORMパッケージがダウンロードされます" placement="top" effect="light">
+                <el-button @click="scormDownload">ダウンロード</el-button>
+              </el-tooltip>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="20" align="left">
+              <div class="message">
+                <p>*動画一覧から選択されたSCORMパッケージがダウンロードされます。そのパッケージをMoodleの 「活動」 → 「SCORMパッケージ」で追加することが可能です。 </p>
+
+              </div>
             </el-col>
           </el-row>
 
         </el-col>
-        <el-col :span="10" align="center">
+        <el-col :span="10" align="right">
           <div>
             <Preview :videoUrl="previewUrl" align="right" />
             <div align="center">
@@ -54,21 +74,32 @@
           <el-button @click="searchVideo">検索</el-button>
         </el-col>
       </el-row>
-      <el-row :gutter="10">
+      <el-row style="padding-right: 10px" :gutter="10">
         <template v-for="video in videos">
           <el-col :span="6">
             <div @click="
               setVideo(video.videoUrl, video.uniqueName, video.videoName)
             ">
               <!-- <span>{{ video.videoName }}</span><br /> -->
-              <el-image style="height: 200px" :src="video.thumbUrl" class="videoDiv round-image" /><br />
-              <span>{{ video.videoName }}</span><br />
+              <el-tooltip content="動画をクリックするとプレビュー画面に表示・次ダウンロード動画としてセットされます" placement="top" effect="light">
+                <el-image style="height: 200px" :src="video.thumbUrl" class="videoDiv round-image" /><br />
+              </el-tooltip>
+              <span>{{ video.videoName }}</span><br /><br />
             </div>
           </el-col>
         </template>
       </el-row>
     </el-main>
   </el-container>
+
+  <div class="fixed-button">
+    <el-icon>
+      <el-button @click="scrollUp" type="success" size="large" circle>
+        <Top />
+      </el-button>
+    </el-icon>
+  </div>
+
 </template>
 
 <script setup>
@@ -97,6 +128,8 @@ const socket = io(BASE_URL);
 
 onMounted(() => {
   updateThumbnails();
+  // console.log("videos[-1].videoUrl", videos[0].value.videoUrl)
+  // setVideo(videos[-1].videoUrl, videos[-1].uniqueName, videos[-1].videoName);
 });
 
 socket.on("connect", (msg) => {
@@ -141,9 +174,20 @@ const updateThumbnails = () => {
 
         var objects = res.data.objects;
         objects.forEach((object) => {
-          videos.value.push(object);
-          videoFullList.value.push(object);
+          videos.value.unshift(object);
+          videoFullList.value.unshift(object);
         });
+
+        let videoUrl = videos.value[0].videoUrl;
+        let uniqueName = videos.value[0].uniqueName;
+        let videoName = videos.value[0].videoName;
+        // let videoUrl = videos.value[videos.value.length - 1].videoUrl;
+        // let uniqueName = videos.value[videos.value.length - 1].uniqueName;
+        // let videoName = videos.value[videos.value.length - 1].videoName;
+
+        setVideo(videoUrl, uniqueName, videoName);
+        console.log("videos[-1].videoUrl", videos.value[videos.value.length - 1].videoUrl)
+
       } else {
         console.log("Response is here: ", res.data);
       }
@@ -153,6 +197,7 @@ const updateThumbnails = () => {
 var fileWithEx = "";
 var videoUrl = "";
 var uniqueName = "";
+var videoName = "";
 const sendFile = async () => {
   const myFiles = file.value.files;
   const formData = new FormData();
@@ -166,29 +211,56 @@ const sendFile = async () => {
     console.log({ res });
     if (res.data.success == true) {
       axios.get(BASE_URL + "/ffmpeg").then((res) => {
-        console.log("ffmpeg res is here", res.data);
-        const options = {
-          url: BASE_URL + "/videoDatabase",
-          method: "POST",
-          data: {
-            userID: authStore.$state.userid,
-            videoName: res.data.videoName,
-            uniqueName: res.data.uniqueName,
-          },
-        };
-        fileWithEx = "/" + res.data.uniqueName + ".m3u8";
-        videoUrl = res.data.videoUrl + res.data.uniqueName + fileWithEx;
-        uniqueName = res.data.uniqueName;
-        axios(options).then((res) => {
-          console.log("response is here ", res.data);
-          updateThumbnails();
-          setVideo(videoUrl, uniqueName);
-        });
+        if (res.data.success == true) {
+          open()
+
+          console.log("ffmpeg res is here", res.data);
+          const options = {
+            url: BASE_URL + "/videoDatabase",
+            method: "POST",
+            data: {
+              userID: authStore.$state.userid,
+              videoName: res.data.videoName,
+              uniqueName: res.data.uniqueName,
+            },
+          };
+          fileWithEx = "/" + res.data.uniqueName + ".m3u8";
+          videoUrl = res.data.videoUrl + res.data.uniqueName + fileWithEx;
+          uniqueName = res.data.uniqueName;
+          console.log("before res.data video")
+          videoName = res.data.videoName;
+
+          console.log("after res.data video")
+          axios(options).then((res) => {
+            console.log("response is here ", res.data);
+            updateThumbnails();
+            setVideo(videoUrl, uniqueName, videoName);
+          });
+
+        } else {
+          error_message()
+        }
       });
     }
   });
 };
 
+const open = () => {
+  ElMessage({
+    showClose: true,
+    message: '動画変換が完了しました',
+    type: 'success',
+  })
+}
+const error_message = () => {
+  ElMessage({
+    showClose: true,
+    message: "予期せぬエラーが発生しました。ブラウザをリフレッシュして動画を再アップロードしてください。",
+    type: 'error',
+  })
+
+  // ElMessage("予期せぬエラーが発生しました。ブラウザをリフレッシュして動画を再アップロードしてください。")
+}
 const scormDownload = () => {
   const options = {
     url: BASE_URL + "/scormProperty",
@@ -231,11 +303,15 @@ const setVideo = (videoUrl, uniqueName, videoName) => {
   folderNameZip.value = videoName;
   previewName.value = videoName;
 
+  scrollUp()
+};
+
+const scrollUp = () => {
   window.scrollTo({
     top: 0,
     behavior: "smooth",
   });
-};
+}
 </script>
 
 <style>
@@ -249,5 +325,19 @@ const setVideo = (videoUrl, uniqueName, videoName) => {
 
 .round-image {
   border-radius: 10%;
+}
+
+.bottom-line {
+  border-bottom: 2px dashed #dcdcdc;
+}
+
+.message {
+  color: #808080
+}
+
+.fixed-button {
+  position: fixed;
+  bottom: 60px;
+  right: 60px;
 }
 </style>

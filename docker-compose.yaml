@@ -10,9 +10,9 @@ services:
       - 3000:3000
     volumes:
       - video_express_node:/app/node_modules
-      - transcoded_videos:/app/public/transcoded
-      - thumbnails:/app/public/thumbnails
       - ./express:/app
+      # - transcoded_videos:/app/public/transcoded
+      # - thumbnails:/app/public/thumbnails
 
     tty: true
     stdin_open: true

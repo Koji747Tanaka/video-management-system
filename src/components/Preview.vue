@@ -30,9 +30,10 @@ onUpdated(() => {
 </script>
 <style>
 video {
-  width: 540px;
+  width: 530px;
   height: 300px;
   object-fit: contain;
+  /* margin-right: -30px; */
   /* max-width: 500px; */
   /* max-height: 300px; */
 }

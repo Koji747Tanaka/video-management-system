@@ -67,13 +67,22 @@ const io = require('socket.io')(httpsServer, {
 app.set('io', io);
 httpsServer.listen(PORT);
 io.on('connect', function (socket) {
+    console.log("This is working")
     // Clientにメッセージを送信
     setInterval(() => {
         progressCompleted = Math.trunc(progressCompleted)
         socket.emit('xxx', { message: progressCompleted });
     }, 2000);
-
 });
+
+
+// io.on('connect', function (socket) {
+//     // Clientにメッセージを送信
+//     setInterval(() => {
+//         progressCompleted = Math.trunc(progressCompleted)
+//         socket.emit('xxx', { message: progressCompleted });
+//     }, 2000);
+// });
 
 // mongoose.connect("mongodb://localhost:27017", {
 mongoose.connect("mongodb://mongodb:27017", {
@@ -203,7 +212,9 @@ let ffmpegFile = "";
 let uniqueName = "";
 let videoName = "";
 
+
 app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
+
     mkNonDir(dirReceived);
     receivedName = Object.keys(req.files)[0];
     console.log(req.files);
@@ -242,6 +253,7 @@ app.get("/ffmpeg", function (req, res) {
                 filename: uniqueName
             }).on('error', function (err) {
                 console.log('screenshot error happened: ' + err.message);
+                res.send({ success: false })
             }).on('end', function (err) {
                 console.log('Screenshot process finished: ');
             });
@@ -279,9 +291,12 @@ app.get("/ffmpeg", function (req, res) {
         })
         .on('error', function (err) {
             console.log('converting error happened: ' + err.message);
+            res.send({ success: false })
         })
         .save(`${transcodedSegFolder}/${uniqueName}.m3u8`);
 })
+
+
 
 app.post("/videoDatabase", function (req, res) {
     console.log(req.body.userID);
@@ -313,6 +328,7 @@ app.get("/videoThumbnails", function (req, res) {
         }
         else {
             if (foundVideoArray) {
+                console.log("foundVideoArray", foundVideoArray)
                 var files = fs.readdirSync('./public/thumbnails');
                 foundVideoArray.forEach(video => {
                     var foundFile = files.find(file => {
