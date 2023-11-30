@@ -56,12 +56,12 @@ services:
   #   networks:
   #     - default
 
-networks:
-  default:
-    driver: bridge
-  mongo-express:
-    name: mongo-express
-    driver: bridge
+  # networks:
+  #   default:
+  #     driver: bridge
+  #   mongo-express:
+  #     name: mongo-express
+  #     driver: bridge
 
 volumes:
   video_dev_node_modules:
