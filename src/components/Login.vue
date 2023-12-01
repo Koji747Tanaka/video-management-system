@@ -47,7 +47,7 @@ import {
   ref,
 } from "vue";
 // const BASE_URL = "https://13.230.214.179:3000";
-const BASE_URL = "https://localhost:3000";
+const BASE_URL = "https://localhost:3001";
 
 onMounted(() => {
   const API_URL = BASE_URL;

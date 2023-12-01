@@ -33,15 +33,15 @@ var sourceFolder = "";
 var sourcePath = "";
 
 //ディレクトリーの作成
-var dirReceived = './received';
-var dirTranscoded = './public/transcoded';
-const mkNonDir = (dir) => {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir);
-    }
-}
+// var dirReceived = './received';
+// var dirTranscoded = './public/transcoded';
+// const mkNonDir = (dir) => {
+//     if (!fs.existsSync(dir)) {
+//         fs.mkdirSync(dir);
+//     }
+// }
 
-mkNonDir(dirTranscoded);
+// mkNonDir(dirTranscoded);
 
 app.use(bodyParser.urlencoded({
     extended: true

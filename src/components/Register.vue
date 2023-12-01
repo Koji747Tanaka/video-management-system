@@ -36,7 +36,7 @@ import { userAuthStore } from "../store/auth.store.js";
 import router from "../router";
 
 // const BASE_URL = "https://13.230.214.179:3000";
-const BASE_URL = "https://localhost:3000";
+const BASE_URL = "https://localhost:3001";
 const authStore = userAuthStore();
 const username = ref("");
 const password = ref("");
