@@ -27,7 +27,7 @@ services:
     ports:
       - 27017:27017
     volumes:
-    - ./database-data:/data/db
+    - ./database-data:/data/db # This is necessary to start mongodb
 
   mongo_express:
     image: mongo-express:latest
