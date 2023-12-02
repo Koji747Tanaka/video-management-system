@@ -13,11 +13,6 @@ const routes = [
         component: () => import("./components/Register.vue"),
     },
     {
-        path: '/loginAgain',
-        name: 'loginAgain',
-        component: () => import("./components/LoginAgain.vue"),
-    },
-    {
         path: '/preview',
         name: 'preview',
         component: () => import("./components/Preview.vue"),
