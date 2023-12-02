@@ -5,34 +5,27 @@
       width="80vw"
       rounded="lg"
       elevated>
+      <v-spacer></v-spacer>
         <v-card-text>
-          <v-form>
+          <v-form ref="form" validate-on="submit" @submit.prevent="submit">
+            <div class="text-subtitle-1 text-medium-emphasis d-flex">{{ $t('email') }}</div>
             <v-text-field
             v-model="username"
-            :label="$t('email')"
-            type="email"
             density="compact"
             placeholder="Email address"
+            :rules="[requiredValidationRule, emailValidationRule]"
             variant="outlined"
             prepend-inner-icon="mdi-email-outline"
             required
             >
             </v-text-field>
-
             <div class="text-subtitle-1 text-medium-emphasis d-flex align-center justify-space-between">
-              Password
-              <a
-                class="text-caption text-decoration-none text-blue"
-                href="#"
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                Forgot login password?</a>
+              {{ $t('password') }}
             </div>
 
             <v-text-field
             v-model="password" 
-            :label="$t('password')"
+            :rules="[requiredValidationRule]"
             :append-inner-icon="visible ? 'mdi-eye-off' : 'mdi-eye'"
             :type="visible ? 'text' : 'password'"
             placeholder="Enter your password"
@@ -40,50 +33,44 @@
             density="compact"
             variant="outlined"
             @click:append-inner="visible = !visible"
-            required
             >
-              
             </v-text-field>
+            <v-btn
+            :loading="loading"
+            block
+            rounded
+            class="mb-8 mt-8"
+            color="blue"
+            size="large"
+            variant="tonal"
+            type="submit"
+            >
+            Log In
+            </v-btn>
           </v-form>
+
+          
+
+          <div class="text-center">
+            <router-link to="/register">サインアップ<v-icon icon="mdi-chevron-right"></v-icon></router-link>
+          </div>
         </v-card-text>
       </v-card>
   </v-container>
-
-  <!-- <el-card id="card">
-    <el-container class="margin-top-little">
-      <el-form class="login-form" label-width="100px">
-        <el-form-item label="アカウント名">
-          <el-input v-model="username" placeholder="username" required></el-input>
-        </el-form-item>
-        <el-form-item :label="$t('password')">
-          <el-input v-model="password" type="password" placeholder="password" required>
-          </el-input>
-        </el-form-item>
-        <div id="elButton">
-          <el-button id="elButton" type="primary" plain @click="onClickSubmit()">ログイン</el-button>
-        </div>
-      </el-form>
-    </el-container>
-
-    <el-container class="align-centre margin-top">
-      <div class="block-grey">
-        <p>アカウントを作成する場合はサインアップへ</p>
-        <div class="margin-top-little">
-          <router-link to="/register">サインアップa </router-link>
-        </div>
-      </div>
-    </el-container>
-  </el-card> -->
 </template>
 
 <script setup>
 import axios from "axios";
 import { userAuthStore } from "../store/auth.store.js";
 import router from "../router";
-import {
-  onMounted,
-  ref,
-} from "vue";
+import {emailRule, requiredRule} from '../rules'
+import { useI18n } from 'vue-i18n'
+import {onMounted, ref} from "vue";
+
+const { t } = useI18n()
+const emailValidationRule = emailRule(t);
+const requiredValidationRule = requiredRule(t);
+
 const BASE_URL = import.meta.env.VITE_SERVER_URL;
 
 onMounted(() => {
@@ -94,7 +81,6 @@ onMounted(() => {
       const username = res.data.username;
       authStore.auth();
       authStore.setUser(id, username);
-      console.log("mounted.");
       router.push("/video");
     } 
     // else {
@@ -103,7 +89,9 @@ onMounted(() => {
   });
 });
 
+const form = ref(null);
 const visible = ref(false);
+const loading = ref(false)
 const username = ref("");
 const password = ref("");
 const authStore = userAuthStore();
@@ -113,7 +101,13 @@ const config = {
   withCredentials: true,
 };
 
-const onClickSubmit = () => {
+const submit = async(event) => {
+  const isValid = await form.value.validate();
+  if (!isValid.valid) {
+    return
+  }
+
+  loading.value = true
   const options = {
     url: BASE_URL + "/login",
     method: "POST",
@@ -136,14 +130,10 @@ const onClickSubmit = () => {
       return res.data;
     }
   });
-
+  loading.value=false
 };
 </script>
 <style>
-.login-form {
-  width: 290px;
-}
-
 .fill-height {
   display: flex;
   justify-content: center;
