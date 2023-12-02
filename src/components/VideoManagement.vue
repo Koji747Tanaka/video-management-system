@@ -80,7 +80,6 @@
             <div @click="
               setVideo(video.videoUrl, video.uniqueName, video.videoName)
             ">
-              <!-- <span>{{ video.videoName }}</span><br /> -->
               <el-tooltip content="動画をクリックするとプレビュー画面に表示・次ダウンロード動画としてセットされます" placement="top" effect="light">
                 <el-image style="height: 200px" :src="video.thumbUrl" class="videoDiv round-image" /><br />
               </el-tooltip>
@@ -106,12 +105,10 @@
 import { ref, reactive, onMounted, onUpdated } from "vue";
 import axios from "axios";
 import { userAuthStore } from "../store/auth.store.js";
-import router from "../router";
 import Preview from "./Preview.vue";
 import io from "socket.io-client";
 
-// const BASE_URL = "https://13.230.214.179:3000";
-const BASE_URL = "https://localhost:3000";
+const BASE_URL = import.meta.env.SERVER_URL;
 // const io = require('socket.io-client');
 const authStore = userAuthStore();
 const file = ref("");
@@ -132,16 +129,16 @@ onMounted(() => {
   // setVideo(videos[-1].videoUrl, videos[-1].uniqueName, videos[-1].videoName);
 });
 
-socket.on("connect", (msg) => {
-  console.log("socket.id", socket.id);
-  console.log("接続できた?", socket.connected);
-});
+// socket.on("connect", (msg) => {
+//   console.log("socket.id", socket.id);
+//   console.log("接続できた?", socket.connected);
+// });
 
-// Serverからメッセージを受信
-socket.on("xxx", (data) => {
-  console.log(`type: ${typeof data}   data: ${data.message}`);
-  progressValue.value = data.message;
-});
+// // Serverからメッセージを受信
+// socket.on("xxx", (data) => {
+//   console.log(`type: ${typeof data}   data: ${data.message}`);
+//   progressValue.value = data.message;
+// });
 
 const searchVideo = () => {
   console.log(search.value);
@@ -181,10 +178,6 @@ const updateThumbnails = () => {
         let videoUrl = videos.value[0].videoUrl;
         let uniqueName = videos.value[0].uniqueName;
         let videoName = videos.value[0].videoName;
-        // let videoUrl = videos.value[videos.value.length - 1].videoUrl;
-        // let uniqueName = videos.value[videos.value.length - 1].uniqueName;
-        // let videoName = videos.value[videos.value.length - 1].videoName;
-
         setVideo(videoUrl, uniqueName, videoName);
         console.log("videos[-1].videoUrl", videos.value[videos.value.length - 1].videoUrl)
 

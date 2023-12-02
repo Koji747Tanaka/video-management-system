@@ -5,11 +5,7 @@
 </template>
 
 <script setup>
-// import { ref } from 'vue'
-import axios from "axios";
-import { userAuthStore } from "../store/auth.store.js";
-import router from "../router";
-import { ref, reactive, onMounted, onUpdated } from "vue";
+import { onUpdated } from "vue";
 import Hls from "hls.js";
 
 const props = defineProps({
@@ -33,8 +29,5 @@ video {
   width: 530px;
   height: 300px;
   object-fit: contain;
-  /* margin-right: -30px; */
-  /* max-width: 500px; */
-  /* max-height: 300px; */
 }
 </style>

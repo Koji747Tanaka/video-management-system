@@ -1,54 +1,47 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import Register from "./components/Register.vue";
-import Login from "./components/Login.vue";
-import Video from "./components/VideoManagement.vue";
-import Preview from "./components/Preview.vue";
-import LoginAgain from "./components/LoginAgain.vue"
 import { userAuthStore } from "./store/auth.store.js";
 
 const routes = [
     {
         path: '/',
         name: 'login',
-        component: Login,
+        component: () => import("./components/Login.vue"),
     },
     {
         path: '/register',
         name: 'register',
-        component: Register,
+        component: () => import("./components/Register.vue"),
     },
     {
         path: '/loginAgain',
         name: 'loginAgain',
-        component: LoginAgain,
+        component: () => import("./components/LoginAgain.vue"),
     },
     {
         path: '/preview',
         name: 'preview',
-        component: Preview,
+        component: () => import("./components/Preview.vue"),
     },
     {
         path: '/video',
         name: 'video',
-        component: Video,
+        component: () => import("./components/VideoManagement.vue"),
         meta: {
-            requiresAuth: true, //true to require auth
+            requiresAuth: true, 
         }
     }
 ]
 
 const router = createRouter({
-    history: createWebHistory(), // This is just an HTML mode.
+    history: createWebHistory(),
     routes,
 })
 
 router.beforeEach((to, from, next) => {
     if (to.matched.some(record => record.meta.requiresAuth)) {
         const authStore = userAuthStore();
-        // console.log("user auth store is here ", authStore.$id)
         console.log("user auth store is here ", authStore.isLogin)
         if (!authStore.isLogin) {
-            // 認証されていない時、認証画面へ遷移
             next({
                 path: '/',
                 query: {

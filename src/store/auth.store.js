@@ -13,8 +13,6 @@ export const userAuthStore = defineStore({
     actions: {
         auth() {
             this.isLogin = true;
-            console.log("Authentication is now passed.");
-            // state.user = user;
         },
         setJWT(JWT) {
             this.JWT = JWT;

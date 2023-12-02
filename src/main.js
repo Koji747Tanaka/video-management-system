@@ -1,21 +1,29 @@
 import { createApp } from 'vue'
+import 'vuetify/styles'
+import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
+import '@mdi/font/css/materialdesignicons.css'
 import { createPinia } from 'pinia'
-import ElementPlus from 'element-plus'
-import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import router from './router'
 import App from './App.vue'
 import './assets/main.css'
+import i18n from './plugins/i18n'
 
-// import { userAuthStore } from "./store/auth.store"
+import { userAuthStore } from "./store/auth.store"
 const app = createApp(App)
-for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-    app.component(key, component)
-}
+const vuetify = createVuetify({
+    components,
+    directives,
+})
 
 const pinia = createPinia()
 // app.use(vueCookies);
-app.use(pinia)
-app.use(router)
-app.use(ElementPlus).mount('#app')
+app
+.use(i18n)
+.use(pinia)
+.use(router)
+.use(vuetify)
+.mount('#app')
 
 export default app;

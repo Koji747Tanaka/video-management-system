@@ -12,7 +12,6 @@
     </el-container>
     <el-container class="align-centre margin-top">
       <div class="block-grey">
-        <p>------------------------------------</p>
         <p>アカウントを作成する場合はサインアップへ</p>
         <div class="margin-top-little">
           <router-link to="/">ログイン</router-link>
@@ -23,17 +22,15 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
 import axios from "axios";
 import { userAuthStore } from "../store/auth.store.js";
 import router from "../router";
-import { useCookies } from "vue3-cookies";
 
-const API_URL = "https://localhost:3000/";
+const API_URL = import.meta.env.SERVER_URL;
 const authStore = userAuthStore();
 
 const onClickSubmit = () => {
-  axios.get(API_URL + "login", { withCredentials: true }).then((res) => {
+  axios.get(API_URL + "/login", { withCredentials: true }).then((res) => {
     if (res.data.success == true) {
       const id = res.data.userID;
       const username = res.data.username;
