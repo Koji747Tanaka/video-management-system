@@ -1,17 +1,21 @@
 version: '3.9'
 services:
-  express:
-    container_name: video-express2
+  dev:
+    container_name: video-express
     image: video-express:latest
     build:
       context: .
       dockerfile: Dockerfile.express
     ports:
       - 3001:3000
+    env_file:
+      - .env.dev
     volumes:
       - video_express_node:/app/node_modules
       - .:/app
-
+    depends_on:
+      - mongodb
+      - mongo_express
     tty: true
     stdin_open: true
     networks:
@@ -19,11 +23,11 @@ services:
 
   mongodb:
     image: mongo:latest
-    container_name: mongodb2
+    container_name: mongodb
     restart: always
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: password
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password
     ports:
       - 27017:27017
     volumes:
@@ -31,15 +35,17 @@ services:
 
   mongo_express:
     image: mongo-express:latest
-    container_name: mongo_express2
+    container_name: mongo_express
     restart: always
     ports:
       - 8081:8081
     environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: password
-      ME_CONFIG_MONGODB_SERVER: mongodb
-      ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=root
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_URL=mongodb://mongodb:27017
+    depends_on:
+      - mongodb
 
 volumes:
   video_express_node:

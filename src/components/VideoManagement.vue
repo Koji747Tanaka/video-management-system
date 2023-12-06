@@ -106,7 +106,7 @@ import { ref, reactive, onMounted, onUpdated } from "vue";
 import axios from "axios";
 import { userAuthStore } from "../store/auth.store.js";
 import Preview from "./Preview.vue";
-import io from "socket.io-client";
+// import io from "socket.io-client";
 
 const BASE_URL = import.meta.env.SERVER_URL;
 // const io = require('socket.io-client');
@@ -121,7 +121,7 @@ const previewUrl = ref("");
 const folderNameZip = ref("");
 const search = ref("");
 const progressValue = ref(0);
-const socket = io(BASE_URL);
+// const socket = io(BASE_URL);
 
 onMounted(() => {
   updateThumbnails();

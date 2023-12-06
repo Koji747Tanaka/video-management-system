@@ -19,15 +19,10 @@ const shortid = require('shortid');
 const { uploadFile } = require('./s3')
 
 //自己発行証明書
-var privateKey = fs.readFileSync(__dirname + '/cert/localhost-key.pem');
-var certificate = fs.readFileSync(__dirname + '/cert/localhost.pem');
-var options = {
-    key: privateKey,
-    cert: certificate
-};
+
 const PORT = 3000;
 const app = express();
-const videoUrl = "https://localhost:3000/transcoded/"
+const videoUrl = process.env.SERVER_HOST + "/transcoded/"
 var scormName = "";
 var sourceFolder = "";
 var sourcePath = "";
@@ -49,31 +44,31 @@ app.use(bodyParser.urlencoded({
 app.use(flash());
 app.use(cookieParser());
 app.use(bodyParser.json());
-app.use(cors({ credentials: true, origin: 'https://localhost:15173' }));
+app.use(cors({ credentials: true, origin: process.env.CLIENT_HOST })); //http://localhost:15173/register process.env.CLIENT_HOST
 app.use(express.static(__dirname + '/public'));
 
 
 let progressCompleted = 0;
 
 //HTTPSプロトコルに変換
-var httpsServer = https.createServer(options, app);
-const io = require('socket.io')(httpsServer, {
-    cors: {
-        origin: "https://localhost:15173",
-        credentials: true
-    }
-});
+// var httpsServer = https.createServer(options, app);
+// const io = require('socket.io')(httpsServer, {
+//     cors: {
+//         origin: "https://localhost:15173",
+//         credentials: true
+//     }
+// });
 
-app.set('io', io);
-httpsServer.listen(PORT);
-io.on('connect', function (socket) {
-    console.log("This is working")
-    // Clientにメッセージを送信
-    setInterval(() => {
-        progressCompleted = Math.trunc(progressCompleted)
-        socket.emit('xxx', { message: progressCompleted });
-    }, 2000);
-});
+// app.set('io', io);
+// httpsServer.listen(PORT);
+// io.on('connect', function (socket) {
+//     console.log("This is working")
+//     // Clientにメッセージを送信
+//     setInterval(() => {
+//         progressCompleted = Math.trunc(progressCompleted)
+//         socket.emit('xxx', { message: progressCompleted });
+//     }, 2000);
+// });
 
 
 // io.on('connect', function (socket) {
@@ -185,6 +180,7 @@ app.get("/logout", function (req, res) {
 })
 
 app.post("/register", (req, res) => {
+    console.log("working")
     const newUser = new User({
         username: req.body.username,
         password: md5(req.body.password)
@@ -340,8 +336,8 @@ app.get("/videoThumbnails", function (req, res) {
                         }
                     })
                     if (foundFile) {
-                        const thumbURLStem = "https://localhost:3000/thumbnails/";
-                        const videoURLStem = "https://localhost:3000/transcoded/";
+                        const thumbURLStem = process.env.SERVER_HOST  + "/thumbnails/";
+                        const videoURLStem = process.env.SERVER_HOST  + "/transcoded/";
                         const nameWithoutEx = foundFile.substring(0, foundFile.indexOf("."));
                         console.log("videoname situation", nameWithoutEx)
 
@@ -414,5 +410,8 @@ app.post("/scorm", function (req, res) {
     });
 })
 
+app.listen(PORT, () => {
+    console.log(`Example app listening on port ${PORT}`)
+})
 
 
