@@ -21,7 +21,7 @@ const logout = () => {
 
 <template>
   <v-app>
-    <v-app-bar id="top-menu" dense flat>
+    <v-app-bar id="top-menu" dense flat elevation="1">
       <v-toolbar-title>
         <img src="./img/chibalogoside.jpeg" alt="Chiba University Logo" class="logo" height="50" />
       </v-toolbar-title>

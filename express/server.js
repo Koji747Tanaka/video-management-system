@@ -11,7 +11,6 @@ var fs = require('fs');
 const path = require('path');
 var scopackager = require('simple-scorm-packager');
 var flash = require('connect-flash');
-const https = require('https');
 const SECRET_KEY = process.env.ACCESS_TOKEN_SECRET
 const expiresIn = '30min'
 const ffmpeg = require('./ffmpeg');

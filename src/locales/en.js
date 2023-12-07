@@ -11,5 +11,9 @@ export default {
     signup_messege: "Sign up for Video Management Service",
     sign_up: 'Sign up',
     invalid_email: "Invalid email address",
-    required_field: "This field is required"
+    required_field: "This field is required",
+    upload_lecture: "Upload lecture",
+    input_lecture_recording: "Input lecture recording",
+    submit: "submit",
+    hls_cov_message: "Convert mp4 to hls for streaming"
 }

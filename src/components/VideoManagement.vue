@@ -1,5 +1,34 @@
 <template>
-  <el-container>
+  <v-container fluid >
+    <v-row class="text-left mt-5">
+      <v-col cols="6" class="pl-6">
+        <v-row>
+          <v-col cols="12" class="text-left mb-0 pb-0">
+            <v-file-input
+            ref="file"
+            :label="$t('input_lecture_recording')"
+            ></v-file-input>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col class="text-right mt-0 pt-0">
+            <v-tooltip :text="$t('hls_cov_message')" location="top">
+              <template v-slot:activator="{ props }">
+                <v-btn v-bind="props" @click="sendFile" color="primary">{{ $t("submit") }}</v-btn>
+              </template>
+            </v-tooltip>
+          </v-col>
+        </v-row>
+        
+      </v-col>
+      <v-col cols="6" >
+        <Preview :videoUrl="previewUrl" :name="previewName"/>
+      </v-col>
+    </v-row>
+  </v-container>
+
+
+  <!-- <el-container>
     <el-main style="margin: 20px">
       <el-row :gutter="20" style="margin-bottom: 80px">
         <el-col :span="13" style="padding-left: 30px">
@@ -97,7 +126,7 @@
         <Top />
       </el-button>
     </el-icon>
-  </div>
+  </div> -->
 
 </template>
 

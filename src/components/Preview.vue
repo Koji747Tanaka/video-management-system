@@ -1,11 +1,14 @@
 <template>
-  <div>
-    <video id="video" controls playsinline loop></video>
+  <div class="text-center video-container ml-10">
+    <video-player id='video' class="video-player"></video-player>
+    <div>{{ name }}</div>
   </div>
 </template>
 
 <script setup>
-import { onUpdated } from "vue";
+import { onUpdated, ref } from "vue";
+import VueVideoPlayer from '@videojs-player/vue'
+import 'video.js/dist/video-js.css'
 import Hls from "hls.js";
 
 const props = defineProps({
@@ -25,9 +28,14 @@ onUpdated(() => {
 });
 </script>
 <style>
-video {
-  width: 530px;
-  height: 300px;
-  object-fit: contain;
+
+.video-container {
+  width: 640px; /* Fixed width */
+  height: 360px; /* Fixed height */
+}
+
+.video-player {
+  width: 100%;
+  height: 100%;
 }
 </style>

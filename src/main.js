@@ -9,6 +9,8 @@ import router from './router'
 import App from './App.vue'
 import './assets/main.css'
 import i18n from './plugins/i18n'
+import VueVideoPlayer from '@videojs-player/vue'
+import 'video.js/dist/video-js.css'
 
 import { userAuthStore } from "./store/auth.store"
 const app = createApp(App)
@@ -20,6 +22,7 @@ const vuetify = createVuetify({
 const pinia = createPinia()
 // app.use(vueCookies);
 app
+.use(VueVideoPlayer)
 .use(i18n)
 .use(pinia)
 .use(router)
