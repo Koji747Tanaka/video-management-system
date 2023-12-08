@@ -14,9 +14,35 @@
           <v-col class="text-right mt-0 pt-0">
             <v-tooltip :text="$t('hls_cov_message')" location="top">
               <template v-slot:activator="{ props }">
-                <v-btn v-bind="props" @click="sendFile" color="primary">{{ $t("submit") }}</v-btn>
+                <v-btn v-bind="props" @click="sendFile" color="teal">{{ $t("submit") }}</v-btn>
               </template>
             </v-tooltip>
+          </v-col>
+        </v-row>
+        <v-row class="mt-15">
+          <v-col class="pl-9" cols="4">
+            <v-progress-circular :rotate="360" :size="180" :width="25" :model-value="progressValue" color="teal">
+              <template v-slot:default> {{ progressValue }} % </template>
+            </v-progress-circular>
+          </v-col>
+          <v-col cols="8">
+            <v-sheet
+              max-width="600"
+              rounded="lg"
+              width="100%"
+              height="100%"
+              color="#dfd"
+              class="pa-4 text-center mx-auto"
+            >
+            <div style="color: teal;">
+              <h5 class="text-h6 font-weight-bold mb-4" >Video Conversion</h5>
+              <p class="mb-4 text-medium-emphasis text-body-2 text-left">
+                After submitting the video, it may take a significant amount of time to process it into a streamable format.
+              <br>
+                Even if you close the page, the process will continue in the background.
+              </p>
+            </div>
+          </v-sheet>
           </v-col>
         </v-row>
         
@@ -25,24 +51,14 @@
         <Preview :videoUrl="previewUrl" :name="previewName"/>
       </v-col>
     </v-row>
+    <v-row>
+      
+    </v-row>
   </v-container>
 
 
   <!-- <el-container>
-    <el-main style="margin: 20px">
-      <el-row :gutter="20" style="margin-bottom: 80px">
-        <el-col :span="13" style="padding-left: 30px">
-          <el-row justify="start">
-            <el-col :span="5" align="left">
-              MP4ファイル選択:
-            </el-col>
-            <el-col :span="11" align="left">
-              <input ref="file" v-on:change="handleFileUpload()" type="file" />
-            </el-col>
-            <el-col :span="3" align="right">
-              <el-tooltip content="配信用のファイルに変換されます" placement="top" effect="light">
-                <el-button @click="sendFile">セグメント化</el-button>
-              </el-tooltip>
+
             </el-col>
           </el-row>
           <el-row>
