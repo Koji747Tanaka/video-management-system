@@ -26,6 +26,7 @@
     "https": "^1.0.0",
     "jsonwebtoken": "^8.5.1",
     "md5": "^2.3.0",
+    "mkdirp": "^3.0.1",
     "mongoose": "^6.6.1",
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",

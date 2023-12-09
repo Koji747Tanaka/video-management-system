@@ -7,15 +7,15 @@ const md5 = require("md5");
 const cors = require("cors");
 const cookieParser = require('cookie-parser');
 const jwt = require("jsonwebtoken");
-var fs = require('fs');
+const fs = require('fs');
 const path = require('path');
+const { mkdirp } = require('mkdirp')
 var scopackager = require('simple-scorm-packager');
 var flash = require('connect-flash');
 const SECRET_KEY = process.env.ACCESS_TOKEN_SECRET
-const expiresIn = '30min'
+const expiresIn = '180min'
 const ffmpeg = require('./ffmpeg');
 const shortid = require('shortid');
-const { uploadFile } = require('./s3')
 
 //自己発行証明書
 
@@ -27,15 +27,22 @@ var sourceFolder = "";
 var sourcePath = "";
 
 //ディレクトリーの作成
-// var dirReceived = './received';
-// var dirTranscoded = './public/transcoded';
-// const mkNonDir = (dir) => {
-//     if (!fs.existsSync(dir)) {
-//         fs.mkdirSync(dir);
-//     }
-// }
+var dirReceived = './received';
+var dirTranscoded = './public/transcoded';
+let dirThumbnails = './public/thumbnails'
+const mkNonDir = (dir) => {
+    if (!fs.existsSync(dir)) {
+        mkdirp(dir).then(made =>
+            console.log(`made directories, starting with ${made}`)
+        )
+    }
+}
 
-// mkNonDir(dirTranscoded);
+mkNonDir(dirReceived)
+mkNonDir(dirTranscoded)
+mkNonDir(dirThumbnails)
+
+
 
 app.use(bodyParser.urlencoded({
     extended: true
@@ -130,8 +137,6 @@ app.post("/login", function (req, res) {
                 if (foundUser.password === password) {
                     const userID = foundUser.id
                     const accessToken = createToken(userID, userName)
-                    console.log("here is token", accessToken);
-
                     const responseJson = {
                         success: true,
                         username: userName,
@@ -151,27 +156,49 @@ app.post("/login", function (req, res) {
     });
 });
 
-app.get("/login", function (req, res) {
-    var JWTcookie = req.cookies.JWTcookie;
-    console.log("JWT cookie is here", req.cookies.JWTcookie);
-    try {
-        // console.log("veryfy token is here", verifyToken(JWTcookie));
-        const decoded = jwt.verify(JWTcookie, SECRET_KEY, function (err, decoded) {
-            return decoded;
-        })
-        const responseJson = {
-            success: true,
-            username: decoded.name,
-            userID: decoded.id
-        }
-        res.status(200).json(responseJson);
+const isUserCredentialValid = async (JWT) => {
+try {
+    const decoded = jwt.verify(JWT, SECRET_KEY);
+    const userID = decoded.id;
+
+    const foundUser = await User.findOne({ id: userID }).exec();
+
+    if (foundUser) {
+    console.log("Found user: ", foundUser.username);
+    return foundUser.username;
+    } else {
+    return false;
     }
-    catch (err) {
-        const status = 401
-        const message = 'Unauthorized'
-        res.send("Not authorized. Better login");
+    } catch (err) {
+        console.log("Unauthorized");
+        return false;
     }
+};
+
+app.get("/login", async function (req, res) {
+const jwt = req.cookies.JWTcookie;
+const username = await isUserCredentialValid(jwt);
+
+if (username) {
+    res.status(200).json({ status: true });
+} else {
+    res.status(400).json({ status: false });
+}
 });
+
+app.get('/api/user-info', async (req, res) => {
+    const jwt = req.cookies.JWTcookie;
+    console.log("dd", isUserCredentialValid(jwt))
+    if (isUserCredentialValid(jwt)){
+        const username = await isUserCredentialValid(jwt)
+        const responseJson = {
+            username: username,
+        }
+        res.status(200).json(responseJson)
+    }else{
+        res.status(400).json({status: true})
+    }
+})
 
 app.get("/logout", function (req, res) {
     res.cookie('JWTcookie', "deleted", { maxAge: 0, httpOnly: true });
@@ -203,22 +230,20 @@ app.post("/register", (req, res) => {
     });
 })
 let receivedName = "";
-let ffmpegFile = "";
+// let ffmpegFile = "";
 let uniqueName = "";
 let videoName = "";
 
 
 app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
-
+    // recieve file and create a folder for it. Then the original file is saved.
     mkNonDir(dirReceived);
     receivedName = Object.keys(req.files)[0];
-    console.log(req.files);
     videoName = receivedName.substring(0, receivedName.indexOf("."));
     const radom = shortid.generate();
     uniqueName = videoName + radom;
     const receivedFile = req.files[receivedName];
     transcodedSegFolder = `./public/transcoded/${uniqueName}`;
-    console.log("transcoded segment file folder is here", transcodedSegFolder);
     mkNonDir(transcodedSegFolder);
 
     fs.open(`./received/${receivedName}`, 'w', (err, fd) => {
@@ -233,11 +258,10 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
             });
         });
     });
-    ffmpegFile = `./received/${receivedName}`
-    res.send({ success: true, uniqueName: uniqueName, videoUrl: videoUrl, videoName: videoName })
-})
+    
 
-app.get("/ffmpeg", function (req, res) {
+    // ffmpeg conversion
+    const ffmpegFile = `./received/${receivedName}`
     ffmpeg()
         .input(ffmpegFile)
         .takeScreenshots(
@@ -253,7 +277,6 @@ app.get("/ffmpeg", function (req, res) {
                 console.log('Screenshot process finished: ');
             });
 
-    //セグメントファイル化
     ffmpeg(ffmpegFile)
         .addOptions([
             '-profile:v baseline',
@@ -289,31 +312,106 @@ app.get("/ffmpeg", function (req, res) {
             res.send({ success: false })
         })
         .save(`${transcodedSegFolder}/${uniqueName}.m3u8`);
+
+        // database
+        const newVideo = new Video({
+            userid: req.body.userID,
+            videoName: req.body.videoName,
+            uniqueName: req.body.uniqueName
+        });
+        newVideo.save((error, video) => {
+            if (error) {
+                if (error.code === 11000) {
+                    return res.json({ status: 'error', error: 'Username already in use.' });
+                }
+                throw error;
+            } else {
+                res.send("successfully saved.");
+            }
+        });
+
+
+
+    res.send({ success: true, uniqueName: uniqueName, videoUrl: videoUrl, videoName: videoName })
 })
 
+// app.get("/ffmpeg", function (req, res) {
+//     ffmpeg()
+//         .input(ffmpegFile)
+//         .takeScreenshots(
+//             {
+//                 count: 1,
+//                 timemarks: ['00:00:01.000'],
+//                 folder: './public/thumbnails',
+//                 filename: uniqueName
+//             }).on('error', function (err) {
+//                 console.log('screenshot error happened: ' + err.message);
+//                 res.send({ success: false })
+//             }).on('end', function (err) {
+//                 console.log('Screenshot process finished: ');
+//             });
+
+//     //セグメントファイル化
+//     ffmpeg(ffmpegFile)
+//         .addOptions([
+//             '-profile:v baseline',
+//             '-level 3.0',
+//             '-start_number 0',
+//             '-hls_time 10',
+//             '-hls_list_size 0',
+//             '-f hls'
+//         ])
+//         .audioCodec('libmp3lame')
+//         .videoCodec('libx264')
+//         .audioBitrate(128)
+//         .on('progress', function (progress) {
+//             console.log('Processing: ' + progress.percent + '% done')
+//             progressCompleted = progress.percent;
+//             console.log("percentCompleted", progress.percent)
+
+//         })
+//         .on('end', function () {
+//             console.log('file has been converted succesfully')
+//             progressCompleted = 0;
+
+//             const filenames = fs.readdirSync(`${transcodedSegFolder}`)
+//             filenames.forEach((filename) => {
+//                 const folderWithFile = uniqueName + "/" + filename
+//                 const filePath = `${transcodedSegFolder}` + "/" + filename
+//                 const result = uploadFile(filePath, folderWithFile);
+//             })
+//             res.send({ success: true, uniqueName: uniqueName, videoUrl: videoUrl, videoName: videoName })
+//         })
+//         .on('error', function (err) {
+//             console.log('converting error happened: ' + err.message);
+//             res.send({ success: false })
+//         })
+//         .save(`${transcodedSegFolder}/${uniqueName}.m3u8`);
+// })
 
 
-app.post("/videoDatabase", function (req, res) {
-    console.log(req.body.userID);
-    const newVideo = new Video({
-        userid: req.body.userID,
-        videoName: req.body.videoName,
-        uniqueName: req.body.uniqueName
-    });
-    newVideo.save((error, video) => {
-        if (error) {
-            if (error.code === 11000) {
-                return res.json({ status: 'error', error: 'Username already in use.' });
-            }
-            throw error;
-        } else {
-            res.send("successfully saved.");
-        }
-    });
-});
+
+// app.post("/videoDatabase", function (req, res) {
+//     console.log(req.body.userID);
+//     const newVideo = new Video({
+//         userid: req.body.userID,
+//         videoName: req.body.videoName,
+//         uniqueName: req.body.uniqueName
+//     });
+//     newVideo.save((error, video) => {
+//         if (error) {
+//             if (error.code === 11000) {
+//                 return res.json({ status: 'error', error: 'Username already in use.' });
+//             }
+//             throw error;
+//         } else {
+//             res.send("successfully saved.");
+//         }
+//     });
+// });
 
 app.get("/videoThumbnails", function (req, res) {
-    console.log(req.query.userID);
+    console.log("thumb", req.query.userID);
 
     let usersFiles = [];
     let usersVideoNames = [];
@@ -410,7 +508,7 @@ app.post("/scorm", function (req, res) {
 })
 
 app.listen(PORT, () => {
-    console.log(`Example app listening on port ${PORT}`)
+    console.log(`Express app listening on port ${PORT}`)
 })
 
 

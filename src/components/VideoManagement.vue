@@ -1,7 +1,7 @@
 <template>
   <v-container fluid >
-    <v-row class="text-left mt-5">
-      <v-col cols="6" class="pl-6">
+    <v-row class="text-left mt-5 pl-6">
+      <v-col cols="6" >
         <v-row>
           <v-col cols="12" class="text-left mb-0 pb-0">
             <v-file-input
@@ -20,7 +20,7 @@
           </v-col>
         </v-row>
         <v-row class="mt-15">
-          <v-col class="pl-9" cols="4">
+          <v-col class="pl-8" cols="4">
             <v-progress-circular :rotate="360" :size="180" :width="25" :model-value="progressValue" color="teal">
               <template v-slot:default> {{ progressValue }} % </template>
             </v-progress-circular>
@@ -51,27 +51,31 @@
         <Preview :videoUrl="previewUrl" :name="previewName"/>
       </v-col>
     </v-row>
+    <v-divider class="mt-16" :thickness="3"></v-divider>
+    <v-row class="pt-6 pl-6">
+      <v-col cols="6">
+        <v-text-field
+        :label="$t('search')"
+        @input="searchVideo"
+        v-model="search"
+        hide-details
+        prepend-icon="mdi-magnify"
+        single-line
+      ></v-text-field>
+      </v-col>
+    </v-row>
     <v-row>
+      <template v-for="video in videos">
+        <v-col cols="4">
+          <VideoCard :video="video"/>
+        </v-col>
+      </template>
       
     </v-row>
   </v-container>
 
 
   <!-- <el-container>
-
-            </el-col>
-          </el-row>
-          <el-row>
-            <el-col :span="5" align="left">
-              変換処理{{ progressValue }}%終了:
-            </el-col>
-            <el-col :span="15">
-              <el-progress :text-inside="true" :stroke-width="24" :percentage="progressValue" status="success" />
-            </el-col>
-          </el-row>
-          <el-row style="margin-bottom: 30px">
-            <el-col class="bottom-line" :span="20">
-            </el-col>
 
           </el-row>
           <el-row>
@@ -97,27 +101,6 @@
             </el-col>
           </el-row>
 
-        </el-col>
-        <el-col :span="10" align="right">
-          <div>
-            <Preview :videoUrl="previewUrl" align="right" />
-            <div align="center">
-              {{ previewName }}
-            </div>
-          </div>
-        </el-col>
-      </el-row>
-
-      <el-row>
-        <el-col :span="2">
-          <span>動画検索:</span>
-        </el-col>
-        <el-col :span="5" align="left">
-          <el-input v-model="search" />
-        </el-col>
-        <el-col :span="2">
-          <el-button @click="searchVideo">検索</el-button>
-        </el-col>
       </el-row>
       <el-row style="padding-right: 10px" :gutter="10">
         <template v-for="video in videos">
@@ -151,9 +134,10 @@ import { ref, reactive, onMounted, onUpdated } from "vue";
 import axios from "axios";
 import { userAuthStore } from "../store/auth.store.js";
 import Preview from "./Preview.vue";
+import VideoCard from './videoCard.vue'
 // import io from "socket.io-client";
 
-const BASE_URL = import.meta.env.SERVER_URL;
+const BASE_URL = import.meta.env.VITE_SERVER_URL;
 // const io = require('socket.io-client');
 const authStore = userAuthStore();
 const file = ref("");
@@ -173,18 +157,6 @@ onMounted(() => {
   // console.log("videos[-1].videoUrl", videos[0].value.videoUrl)
   // setVideo(videos[-1].videoUrl, videos[-1].uniqueName, videos[-1].videoName);
 });
-
-// socket.on("connect", (msg) => {
-//   console.log("socket.id", socket.id);
-//   console.log("接続できた?", socket.connected);
-// });
-
-// // Serverからメッセージを受信
-// socket.on("xxx", (data) => {
-//   console.log(`type: ${typeof data}   data: ${data.message}`);
-//   progressValue.value = data.message;
-// });
-
 const searchVideo = () => {
   console.log(search.value);
   if (search.value != "") {
@@ -242,45 +214,57 @@ const sendFile = async () => {
   Object.keys(myFiles).forEach((key) => {
     formData.append(myFiles.item(key).name, myFiles.item(key));
   });
-  console.log("This file is gonna be sent", file.value.files[0]);
-  console.log("form data", formData);
+  
+  const options = {
+    url: BASE_URL + "/convert",
+    method: "POST",
+    data: {
+      userID: authStore.$state.userid,
+      videoName: res.data.videoName,
+      uniqueName: res.data.uniqueName,
+    },
+    withCredentials: true, 
+  };
 
-  axios.post(BASE_URL + "/convert", formData).then((res) => {
-    console.log({ res });
-    if (res.data.success == true) {
-      axios.get(BASE_URL + "/ffmpeg").then((res) => {
-        if (res.data.success == true) {
-          open()
 
-          console.log("ffmpeg res is here", res.data);
-          const options = {
-            url: BASE_URL + "/videoDatabase",
-            method: "POST",
-            data: {
-              userID: authStore.$state.userid,
-              videoName: res.data.videoName,
-              uniqueName: res.data.uniqueName,
-            },
-          };
-          fileWithEx = "/" + res.data.uniqueName + ".m3u8";
-          videoUrl = res.data.videoUrl + res.data.uniqueName + fileWithEx;
-          uniqueName = res.data.uniqueName;
-          console.log("before res.data video")
-          videoName = res.data.videoName;
 
-          console.log("after res.data video")
-          axios(options).then((res) => {
-            console.log("response is here ", res.data);
-            updateThumbnails();
-            setVideo(videoUrl, uniqueName, videoName);
-          });
 
-        } else {
-          error_message()
-        }
-      });
-    }
-  });
+  // axios.post(BASE_URL + "/convert", formData).then((res) => {
+  //   console.log({ res });
+  //   if (res.data.success == true) {
+  //     axios.get(BASE_URL + "/ffmpeg").then((res) => {
+  //       if (res.data.success == true) {
+  //         open()
+
+  //         console.log("ffmpeg res is here", res.data);
+  //         const options = {
+  //           url: BASE_URL + "/videoDatabase",
+  //           method: "POST",
+  //           data: {
+  //             userID: authStore.$state.userid,
+  //             videoName: res.data.videoName,
+  //             uniqueName: res.data.uniqueName,
+  //           },
+  //         };
+  //         fileWithEx = "/" + res.data.uniqueName + ".m3u8";
+  //         videoUrl = res.data.videoUrl + res.data.uniqueName + fileWithEx;
+  //         uniqueName = res.data.uniqueName;
+  //         console.log("before res.data video")
+  //         videoName = res.data.videoName;
+
+  //         console.log("after res.data video")
+  //         axios(options).then((res) => {
+  //           console.log("response is here ", res.data);
+  //           updateThumbnails();
+  //           setVideo(videoUrl, uniqueName, videoName);
+  //         });
+
+  //       } else {
+  //         error_message()
+  //       }
+  //     });
+  //   }
+  // });
 };
 
 const open = () => {

@@ -85,17 +85,30 @@ const goTo = computed(() => isLogin.value ? '/register': '/')
 onMounted(() => {
 const authStore = userAuthStore();
 axios.get(BASE_URL + "/login", { withCredentials: true }).then((res) => {
-    if (res.data.success == true) {
-    const id = res.data.userID;
-    const username = res.data.username;
-    authStore.auth();
-    authStore.setUser(id, username);
+    console.log("res status where", res)
+    if (res.data.status == true) {
+    
     router.push("/video");
     } 
     // else {
     //   console.log("Response is here: ", res.data);
     // }
 });
+
+const token = 'your-jwt-token';
+
+// Make an authenticated API request to retrieve user information
+axios.get(BASE_URL + '/api/user-info', { withCredentials: true })
+    .then((res) => {
+        console.log('res', res)
+        const username = res.data.username;
+        authStore.auth();
+        authStore.setUser(username);
+        router.push("/video");
+        })
+    .catch((error) => {
+        console.error('Error fetching user information:', error);
+    });
 });
 
 const form = ref(null);

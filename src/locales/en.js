@@ -16,5 +16,6 @@ export default {
     input_lecture_recording: "Input lecture recording",
     submit: "submit",
     hls_cov_message: "Convert mp4 to hls for streaming",
-    processing_message: "In Progress"
+    processing_message: "In Progress",
+    search: "Search"
 }
