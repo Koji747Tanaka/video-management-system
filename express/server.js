@@ -54,7 +54,7 @@ app.use(cors({ credentials: true, origin: process.env.CLIENT_HOST })); //http://
 app.use(express.static(__dirname + '/public'));
 
 
-let progressCompleted = 0;
+
 
 //HTTPSプロトコルに変換
 // var httpsServer = https.createServer(options, app);
@@ -156,7 +156,7 @@ app.post("/login", function (req, res) {
     });
 });
 
-const isUserCredentialValid = async (JWT) => {
+const validateUser = async (JWT) => {
 try {
     const decoded = jwt.verify(JWT, SECRET_KEY);
     const userID = decoded.id;
@@ -164,8 +164,9 @@ try {
     const foundUser = await User.findOne({ id: userID }).exec();
 
     if (foundUser) {
-    console.log("Found user: ", foundUser.username);
-    return foundUser.username;
+    const username = foundUser.username
+    const user_id = foundUser.id
+    return {user_id, username}
     } else {
     return false;
     }
@@ -175,23 +176,13 @@ try {
     }
 };
 
-app.get("/login", async function (req, res) {
-const jwt = req.cookies.JWTcookie;
-const username = await isUserCredentialValid(jwt);
-
-if (username) {
-    res.status(200).json({ status: true });
-} else {
-    res.status(400).json({ status: false });
-}
-});
-
-app.get('/api/user-info', async (req, res) => {
+app.get('/login', async (req, res) => {
     const jwt = req.cookies.JWTcookie;
-    console.log("dd", isUserCredentialValid(jwt))
-    if (isUserCredentialValid(jwt)){
-        const username = await isUserCredentialValid(jwt)
+    if (validateUser(jwt)){
+        const {user_id, username} = await validateUser(jwt)
+
         const responseJson = {
+            user_id: user_id,
             username: username,
         }
         res.status(200).json(responseJson)
@@ -222,7 +213,7 @@ app.post("/register", (req, res) => {
             const responseJson = {
                 success: true,
                 username: user.username,
-                userID: user.id
+                userid: user.username
             }
             res.cookie('JWTcookie', accessToken, { httpOnly: true })
             res.status(200).json(responseJson)
@@ -231,17 +222,22 @@ app.post("/register", (req, res) => {
 })
 let receivedName = "";
 // let ffmpegFile = "";
-let uniqueName = "";
-let videoName = "";
+// let uniqueName = "";
+// let videoName = "";
 
 
-app.post("/convert", fileUpload({ createParentPath: true }), function (req, res) {
-    // recieve file and create a folder for it. Then the original file is saved.
+app.post("/convert", fileUpload({ createParentPath: true }), async function (req, res) {
+    const jwt = req.cookies.JWTcookie;
+    const {user_id, username} = await validateUser(jwt)
+    if (!user_id){
+        res.send({ success: false })
+        return
+    }
     mkNonDir(dirReceived);
     receivedName = Object.keys(req.files)[0];
-    videoName = receivedName.substring(0, receivedName.indexOf("."));
+    const videoName = receivedName.substring(0, receivedName.indexOf("."));
     const radom = shortid.generate();
-    uniqueName = videoName + radom;
+    const uniqueName = videoName + radom;
     const receivedFile = req.files[receivedName];
     transcodedSegFolder = `./public/transcoded/${uniqueName}`;
     mkNonDir(transcodedSegFolder);
@@ -258,8 +254,6 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
             });
         });
     });
-    
-
     // ffmpeg conversion
     const ffmpegFile = `./received/${receivedName}`
     ffmpeg()
@@ -272,11 +266,10 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
                 filename: uniqueName
             }).on('error', function (err) {
                 console.log('screenshot error happened: ' + err.message);
-                res.send({ success: false })
             }).on('end', function (err) {
                 console.log('Screenshot process finished: ');
             });
-
+            
     ffmpeg(ffmpegFile)
         .addOptions([
             '-profile:v baseline',
@@ -291,45 +284,44 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
         .audioBitrate(128)
         .on('progress', function (progress) {
             console.log('Processing: ' + progress.percent + '% done')
-            progressCompleted = progress.percent;
+            let progressCompleted = progress.percent;
             console.log("percentCompleted", progress.percent)
 
         })
         .on('end', function () {
             console.log('file has been converted succesfully')
-            progressCompleted = 0;
-
             const filenames = fs.readdirSync(`${transcodedSegFolder}`)
             filenames.forEach((filename) => {
                 const folderWithFile = uniqueName + "/" + filename
                 const filePath = `${transcodedSegFolder}` + "/" + filename
-                const result = uploadFile(filePath, folderWithFile);
             })
-            res.send({ success: true, uniqueName: uniqueName, videoUrl: videoUrl, videoName: videoName })
         })
         .on('error', function (err) {
             console.log('converting error happened: ' + err.message);
             res.send({ success: false })
+            return
         })
         .save(`${transcodedSegFolder}/${uniqueName}.m3u8`);
-
+        
         // database
         const newVideo = new Video({
-            userid: req.body.userID,
-            videoName: req.body.videoName,
-            uniqueName: req.body.uniqueName
+            userid: user_id,
+            videoName: videoName,
+            uniqueName: uniqueName
         });
+        console.log(newVideo)
+
         newVideo.save((error, video) => {
             if (error) {
                 if (error.code === 11000) {
-                    return res.json({ status: 'error', error: 'Username already in use.' });
+                    res.json({ status: 'error', error: 'Username already in use.' });
+                    return
                 }
                 throw error;
             } else {
-                res.send("successfully saved.");
+                console.log("successfully saved.");
             }
         });
-
 
 
     res.send({ success: true, uniqueName: uniqueName, videoUrl: videoUrl, videoName: videoName })
@@ -411,8 +403,6 @@ app.post("/convert", fileUpload({ createParentPath: true }), function (req, res)
 // });
 
 app.get("/videoThumbnails", function (req, res) {
-    console.log("thumb", req.query.userID);
-
     let usersFiles = [];
     let usersVideoNames = [];
     Video.find({ userid: req.query.userID }, function (err, foundVideoArray) {
@@ -421,7 +411,6 @@ app.get("/videoThumbnails", function (req, res) {
         }
         else {
             if (foundVideoArray) {
-                console.log("foundVideoArray", foundVideoArray)
                 var files = fs.readdirSync('./public/thumbnails');
                 foundVideoArray.forEach(video => {
                     var foundFile = files.find(file => {
@@ -436,7 +425,6 @@ app.get("/videoThumbnails", function (req, res) {
                         const thumbURLStem = process.env.SERVER_HOST  + "/thumbnails/";
                         const videoURLStem = process.env.SERVER_HOST  + "/transcoded/";
                         const nameWithoutEx = foundFile.substring(0, foundFile.indexOf("."));
-                        console.log("videoname situation", nameWithoutEx)
 
                         var object = {
                             thumbUrl: thumbURLStem + foundFile,
@@ -447,7 +435,6 @@ app.get("/videoThumbnails", function (req, res) {
                         usersFiles.push(object);
                     }
                 })
-                console.log("found video name is here", usersFiles);
                 res.send({ success: true, objects: usersFiles });
             }
             else {

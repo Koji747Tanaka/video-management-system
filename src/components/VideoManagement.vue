@@ -133,8 +133,8 @@
 import { ref, reactive, onMounted, onUpdated } from "vue";
 import axios from "axios";
 import { userAuthStore } from "../store/auth.store.js";
+import VideoCard from './videocard.vue';
 import Preview from "./Preview.vue";
-import VideoCard from './videoCard.vue'
 // import io from "socket.io-client";
 
 const BASE_URL = import.meta.env.VITE_SERVER_URL;
@@ -158,11 +158,10 @@ onMounted(() => {
   // setVideo(videos[-1].videoUrl, videos[-1].uniqueName, videos[-1].videoName);
 });
 const searchVideo = () => {
-  console.log(search.value);
+  // console.log(search.value);
   if (search.value != "") {
     videos.value = [];
     videoFullList.value.forEach((video) => {
-      console.log(video.videoName);
       if (video.videoName.startsWith(search.value)) {
         videos.value.push(video);
       }
@@ -184,9 +183,7 @@ const updateThumbnails = () => {
     })
     .then((res) => {
       if (res.data.success == true) {
-        console.log(res.data.objects);
-
-        var objects = res.data.objects;
+        let objects = res.data.objects;
         objects.forEach((object) => {
           videos.value.unshift(object);
           videoFullList.value.unshift(object);
@@ -196,7 +193,7 @@ const updateThumbnails = () => {
         let uniqueName = videos.value[0].uniqueName;
         let videoName = videos.value[0].videoName;
         setVideo(videoUrl, uniqueName, videoName);
-        console.log("videos[-1].videoUrl", videos.value[videos.value.length - 1].videoUrl)
+        // console.log("videos[-1].videoUrl", videos.value[videos.value.length - 1].videoUrl)
 
       } else {
         console.log("Response is here: ", res.data);
@@ -214,17 +211,21 @@ const sendFile = async () => {
   Object.keys(myFiles).forEach((key) => {
     formData.append(myFiles.item(key).name, myFiles.item(key));
   });
-  
+
   const options = {
     url: BASE_URL + "/convert",
     method: "POST",
-    data: {
-      userID: authStore.$state.userid,
-      videoName: res.data.videoName,
-      uniqueName: res.data.uniqueName,
-    },
+    data: formData,
     withCredentials: true, 
   };
+
+  axios(options).then((res) => {
+    // console.log("response is here ", res.data);
+    const {uniqueName, videoUrl, videoName} = res.data
+    // console.log("uniqueName", uniqueName)
+    updateThumbnails();
+    setVideo(videoUrl, uniqueName, videoName);
+  });
 
 
 
@@ -294,7 +295,7 @@ const scormDownload = () => {
   };
 
   axios(options).then((res) => {
-    console.log("res data success here", res.data.success);
+    // console.log("res data success here", res.data.success);
     if (res.data.success) {
       axios
         .post(BASE_URL + "/scorm", {
@@ -303,7 +304,7 @@ const scormDownload = () => {
         })
         .then((res) => {
           var file = res;
-          console.log(res);
+          // console.log(res);
           const blob = new Blob([file], { type: "application/zip" });
           const uri = URL.createObjectURL(blob);
           const link = document.createElement("a");
@@ -318,8 +319,8 @@ const scormDownload = () => {
 };
 
 const setVideo = (videoUrl, uniqueName, videoName) => {
-  console.log(videoUrl);
-  console.log(videoName);
+  // console.log(videoUrl);
+  // console.log(videoName);
   previewUrl.value = videoUrl;
   sourceFolder.value = uniqueName;
   folderNameZip.value = videoName;

@@ -17,7 +17,7 @@ const props = defineProps({
 });
 
 var videoSrc = props.videoUrl.value;
-console.log("video sorce", videoSrc);
+// console.log("video sorce", videoSrc);
 var hls = new Hls();
 
 onUpdated(() => {
