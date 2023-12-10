@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid >
+  <v-container fluid>
     <v-row class="text-left mt-5 pl-6">
       <v-col cols="6" >
         <v-row>
@@ -64,82 +64,26 @@
       ></v-text-field>
       </v-col>
     </v-row>
-    <v-row>
+    <v-row class="pl-6">
       <template v-for="video in videos">
         <v-col cols="4">
-          <VideoCard :video="video"/>
+          <ThumbnailCard :video="video"/>
         </v-col>
       </template>
       
     </v-row>
   </v-container>
 
-
-  <!-- <el-container>
-
-          </el-row>
-          <el-row>
-            <el-col :span="12" align="left">
-              <el-form style="max-width: 460px">
-                <el-form-item label="SCORM パッケージ名:">
-                  <el-input placeholder="Zip ファイル名" v-model="folderNameZip" />
-                </el-form-item>
-              </el-form>
-            </el-col>
-            <el-col :span="12">
-              <el-tooltip content="選択されたSCORMパッケージがダウンロードされます" placement="top" effect="light">
-                <el-button @click="scormDownload">ダウンロード</el-button>
-              </el-tooltip>
-            </el-col>
-          </el-row>
-          <el-row>
-            <el-col :span="20" align="left">
-              <div class="message">
-                <p>*動画一覧から選択されたSCORMパッケージがダウンロードされます。そのパッケージをMoodleの 「活動」 → 「SCORMパッケージ」で追加することが可能です。 </p>
-
-              </div>
-            </el-col>
-          </el-row>
-
-      </el-row>
-      <el-row style="padding-right: 10px" :gutter="10">
-        <template v-for="video in videos">
-          <el-col :span="6">
-            <div @click="
-              setVideo(video.videoUrl, video.uniqueName, video.videoName)
-            ">
-              <el-tooltip content="動画をクリックするとプレビュー画面に表示・次ダウンロード動画としてセットされます" placement="top" effect="light">
-                <el-image style="height: 200px" :src="video.thumbUrl" class="videoDiv round-image" /><br />
-              </el-tooltip>
-              <span>{{ video.videoName }}</span><br /><br />
-            </div>
-          </el-col>
-        </template>
-      </el-row>
-    </el-main>
-  </el-container>
-
-  <div class="fixed-button">
-    <el-icon>
-      <el-button @click="scrollUp" type="success" size="large" circle>
-        <Top />
-      </el-button>
-    </el-icon>
-  </div> -->
-
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUpdated } from "vue";
+import { ref, onMounted } from "vue";
 import axios from "axios";
 import { userAuthStore } from "../store/auth.store.js";
-import VideoCard from './videocard.vue';
+import ThumbnailCard from "./ThumbnailCard.vue";
 import Preview from "./Preview.vue";
-// import io from "socket.io-client";
 
 const BASE_URL = import.meta.env.VITE_SERVER_URL;
-// const io = require('socket.io-client');
-const authStore = userAuthStore();
 const file = ref("");
 const sourceFolder = ref("");
 const previewName = ref("Click a video");
@@ -150,15 +94,11 @@ const previewUrl = ref("");
 const folderNameZip = ref("");
 const search = ref("");
 const progressValue = ref(0);
-// const socket = io(BASE_URL);
 
 onMounted(() => {
   updateThumbnails();
-  // console.log("videos[-1].videoUrl", videos[0].value.videoUrl)
-  // setVideo(videos[-1].videoUrl, videos[-1].uniqueName, videos[-1].videoName);
 });
 const searchVideo = () => {
-  // console.log(search.value);
   if (search.value != "") {
     videos.value = [];
     videoFullList.value.forEach((video) => {
@@ -174,9 +114,7 @@ const searchVideo = () => {
 const updateThumbnails = () => {
   videos.value = [];
   videoFullList.value = [];
-
   const authStore = userAuthStore();
-
   axios
     .get(BASE_URL + "/videoThumbnails", {
       params: { userID: authStore.$state.userid },
@@ -188,23 +126,20 @@ const updateThumbnails = () => {
           videos.value.unshift(object);
           videoFullList.value.unshift(object);
         });
-
         let videoUrl = videos.value[0].videoUrl;
         let uniqueName = videos.value[0].uniqueName;
         let videoName = videos.value[0].videoName;
         setVideo(videoUrl, uniqueName, videoName);
-        // console.log("videos[-1].videoUrl", videos.value[videos.value.length - 1].videoUrl)
-
       } else {
         console.log("Response is here: ", res.data);
       }
     });
 };
 
-var fileWithEx = "";
-var videoUrl = "";
-var uniqueName = "";
-var videoName = "";
+let fileWithEx = "";
+let videoUrl = "";
+let uniqueName = "";
+let videoName = "";
 const sendFile = async () => {
   const myFiles = file.value.files;
   const formData = new FormData();

@@ -1,14 +1,12 @@
 <template>
-  <div class="text-center video-container ml-10">
-    <video-player id='video' class="video-player"></video-player>
-    <div>{{ name }}</div>
+  <div class="text-center ml-10">
+    <video id="video" class="video-container" controls playsinline loop></video>
+    {{ name }}
   </div>
 </template>
 
 <script setup>
-import { onUpdated, ref } from "vue";
-import VueVideoPlayer from '@videojs-player/vue'
-import 'video.js/dist/video-js.css'
+import { onUpdated } from "vue";
 import Hls from "hls.js";
 
 const props = defineProps({
@@ -17,7 +15,7 @@ const props = defineProps({
 });
 
 var videoSrc = props.videoUrl.value;
-// console.log("video sorce", videoSrc);
+console.log("video sorce", videoSrc);
 var hls = new Hls();
 
 onUpdated(() => {
@@ -26,16 +24,12 @@ onUpdated(() => {
   console.log("props.vidoURl is here", props.videoUrl);
   hls.attachMedia(video);
 });
+
 </script>
 <style>
 
 .video-container {
-  width: 640px; /* Fixed width */
-  height: 360px; /* Fixed height */
-}
-
-.video-player {
-  width: 100%;
-  height: 100%;
+  width: 640px; 
+  height: 360px;
 }
 </style>

@@ -17,5 +17,7 @@ export default {
     submit: "submit",
     hls_cov_message: "Convert mp4 to hls for streaming",
     processing_message: "In Progress",
-    search: "Search"
+    search: "Search",
+    download_scorm: "Download the scorm package",
+    preview_lect: "Preview the lecture"
 }

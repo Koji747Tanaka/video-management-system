@@ -178,16 +178,16 @@ try {
 
 app.get('/login', async (req, res) => {
     const jwt = req.cookies.JWTcookie;
-    if (validateUser(jwt)){
-        const {user_id, username} = await validateUser(jwt)
-
+    const {user_id, username} = await validateUser(jwt)
+    if (user_id){
         const responseJson = {
             user_id: user_id,
             username: username,
         }
         res.status(200).json(responseJson)
     }else{
-        res.status(400).json({status: true})
+        console.log("no")
+        res.status(400).json({status: false})
     }
 })
 
@@ -326,81 +326,6 @@ app.post("/convert", fileUpload({ createParentPath: true }), async function (req
 
     res.send({ success: true, uniqueName: uniqueName, videoUrl: videoUrl, videoName: videoName })
 })
-
-// app.get("/ffmpeg", function (req, res) {
-//     ffmpeg()
-//         .input(ffmpegFile)
-//         .takeScreenshots(
-//             {
-//                 count: 1,
-//                 timemarks: ['00:00:01.000'],
-//                 folder: './public/thumbnails',
-//                 filename: uniqueName
-//             }).on('error', function (err) {
-//                 console.log('screenshot error happened: ' + err.message);
-//                 res.send({ success: false })
-//             }).on('end', function (err) {
-//                 console.log('Screenshot process finished: ');
-//             });
-
-//     //セグメントファイル化
-//     ffmpeg(ffmpegFile)
-//         .addOptions([
-//             '-profile:v baseline',
-//             '-level 3.0',
-//             '-start_number 0',
-//             '-hls_time 10',
-//             '-hls_list_size 0',
-//             '-f hls'
-//         ])
-//         .audioCodec('libmp3lame')
-//         .videoCodec('libx264')
-//         .audioBitrate(128)
-//         .on('progress', function (progress) {
-//             console.log('Processing: ' + progress.percent + '% done')
-//             progressCompleted = progress.percent;
-//             console.log("percentCompleted", progress.percent)
-
-//         })
-//         .on('end', function () {
-//             console.log('file has been converted succesfully')
-//             progressCompleted = 0;
-
-//             const filenames = fs.readdirSync(`${transcodedSegFolder}`)
-//             filenames.forEach((filename) => {
-//                 const folderWithFile = uniqueName + "/" + filename
-//                 const filePath = `${transcodedSegFolder}` + "/" + filename
-//                 const result = uploadFile(filePath, folderWithFile);
-//             })
-//             res.send({ success: true, uniqueName: uniqueName, videoUrl: videoUrl, videoName: videoName })
-//         })
-//         .on('error', function (err) {
-//             console.log('converting error happened: ' + err.message);
-//             res.send({ success: false })
-//         })
-//         .save(`${transcodedSegFolder}/${uniqueName}.m3u8`);
-// })
-
-
-
-// app.post("/videoDatabase", function (req, res) {
-//     console.log(req.body.userID);
-//     const newVideo = new Video({
-//         userid: req.body.userID,
-//         videoName: req.body.videoName,
-//         uniqueName: req.body.uniqueName
-//     });
-//     newVideo.save((error, video) => {
-//         if (error) {
-//             if (error.code === 11000) {
-//                 return res.json({ status: 'error', error: 'Username already in use.' });
-//             }
-//             throw error;
-//         } else {
-//             res.send("successfully saved.");
-//         }
-//     });
-// });
 
 app.get("/videoThumbnails", function (req, res) {
     let usersFiles = [];
