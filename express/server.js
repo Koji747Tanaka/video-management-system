@@ -15,18 +15,12 @@ var flash = require('connect-flash');
 const SECRET_KEY = process.env.ACCESS_TOKEN_SECRET
 const expiresIn = '180min'
 const ffmpeg = require('./ffmpeg');
-const shortid = require('shortid');
-
-//自己発行証明書
+// const shortid = require('shortid');
 
 const PORT = 3000;
 const app = express();
 const videoUrl = process.env.SERVER_HOST + "/transcoded/"
-var scormName = "";
-var sourceFolder = "";
-var sourcePath = "";
 
-//ディレクトリーの作成
 var dirReceived = './received';
 var dirTranscoded = './public/transcoded';
 let dirThumbnails = './public/thumbnails'
@@ -42,8 +36,6 @@ mkNonDir(dirReceived)
 mkNonDir(dirTranscoded)
 mkNonDir(dirThumbnails)
 
-
-
 app.use(bodyParser.urlencoded({
     extended: true
 }));
@@ -53,39 +45,6 @@ app.use(bodyParser.json());
 app.use(cors({ credentials: true, origin: process.env.CLIENT_HOST })); //http://localhost:15173/register process.env.CLIENT_HOST
 app.use(express.static(__dirname + '/public'));
 
-
-
-
-//HTTPSプロトコルに変換
-// var httpsServer = https.createServer(options, app);
-// const io = require('socket.io')(httpsServer, {
-//     cors: {
-//         origin: "https://localhost:15173",
-//         credentials: true
-//     }
-// });
-
-// app.set('io', io);
-// httpsServer.listen(PORT);
-// io.on('connect', function (socket) {
-//     console.log("This is working")
-//     // Clientにメッセージを送信
-//     setInterval(() => {
-//         progressCompleted = Math.trunc(progressCompleted)
-//         socket.emit('xxx', { message: progressCompleted });
-//     }, 2000);
-// });
-
-
-// io.on('connect', function (socket) {
-//     // Clientにメッセージを送信
-//     setInterval(() => {
-//         progressCompleted = Math.trunc(progressCompleted)
-//         socket.emit('xxx', { message: progressCompleted });
-//     }, 2000);
-// });
-
-// mongoose.connect("mongodb://localhost:27017", {
 mongoose.connect("mongodb://mongodb:27017", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -221,10 +180,15 @@ app.post("/register", (req, res) => {
     });
 })
 let receivedName = "";
-// let ffmpegFile = "";
-// let uniqueName = "";
-// let videoName = "";
 
+function generateAlphabeticId(length) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
+}
 
 app.post("/convert", fileUpload({ createParentPath: true }), async function (req, res) {
     const jwt = req.cookies.JWTcookie;
@@ -236,7 +200,7 @@ app.post("/convert", fileUpload({ createParentPath: true }), async function (req
     mkNonDir(dirReceived);
     receivedName = Object.keys(req.files)[0];
     const videoName = receivedName.substring(0, receivedName.indexOf("."));
-    const radom = shortid.generate();
+    const radom = generateAlphabeticId(8);
     const uniqueName = videoName + radom;
     const receivedFile = req.files[receivedName];
     transcodedSegFolder = `./public/transcoded/${uniqueName}`;

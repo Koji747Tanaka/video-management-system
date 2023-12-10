@@ -1,6 +1,6 @@
 <template>
   <v-container fluid>
-    <v-row class="text-left mt-5 pl-6">
+    <v-row class="text-left mt-5 pl-2">
       <v-col cols="6" >
         <v-row>
           <v-col cols="12" class="text-left mb-0 pb-0">
@@ -19,7 +19,7 @@
             </v-tooltip>
           </v-col>
         </v-row>
-        <v-row class="mt-15">
+        <v-row class="mt-20">
           <v-col class="pl-8" cols="4">
             <v-progress-circular :rotate="360" :size="180" :width="25" :model-value="progressValue" color="teal">
               <template v-slot:default> {{ progressValue }} % </template>
@@ -31,10 +31,10 @@
               rounded="lg"
               width="100%"
               height="100%"
-              color="#dfd"
+              color="#F5F5F5"
               class="pa-4 text-center mx-auto"
             >
-            <div style="color: teal;">
+            <div style="color: darkgrey;">
               <h5 class="text-h6 font-weight-bold mb-4" >Video Conversion</h5>
               <p class="mb-4 text-medium-emphasis text-body-2 text-left">
                 After submitting the video, it may take a significant amount of time to process it into a streamable format.
@@ -45,14 +45,31 @@
           </v-sheet>
           </v-col>
         </v-row>
+        <v-row>
+          <v-col>
+            <v-sheet
+              rounded="lg"
+              width="100%"
+              color="#F5F5F5"
+              class="pa-4 text-center mx-auto"
+            >
+            <div style="color: darkgrey;">
+              <h5 class="text-h6 font-weight-bold mb-4" >Moodle Upload</h5>
+              <p class="mb-4 text-medium-emphasis text-body-2 text-left">
+                Once the conversion finishes, please preview the lecture recording and download the SCORM package. Then you can upload it on Moodle.
+              </p>
+            </div>
+          </v-sheet>
+          </v-col>
+        </v-row>
         
       </v-col>
       <v-col cols="6" >
-        <Preview :videoUrl="previewUrl" :name="previewName"/>
+        <Preview :videoUrl="previewUrl" :previewName="previewName" :uniqueName="sourceFolder" @downloadScorm="scormDownload"/>
       </v-col>
     </v-row>
     <v-divider class="mt-16" :thickness="3"></v-divider>
-    <v-row class="pt-6 pl-6">
+    <v-row class="pt-6 pl-2">
       <v-col cols="6">
         <v-text-field
         :label="$t('search')"
@@ -64,10 +81,10 @@
       ></v-text-field>
       </v-col>
     </v-row>
-    <v-row class="pl-6">
+    <v-row class="pl-2">
       <template v-for="video in videos">
         <v-col cols="4">
-          <ThumbnailCard :video="video" @setPreviewVideo="setPreviewVideo"/>
+          <ThumbnailCard :video="video" @setPreviewVideo="setPreviewVideo" @downloadScorm="scormDownload"/>
         </v-col>
       </template>
       
@@ -94,6 +111,30 @@ const previewUrl = ref("");
 const folderNameZip = ref("");
 const search = ref("");
 const progressValue = ref(0);
+
+const scormDownload = (uniqueName) => {
+    const options = {
+        url: BASE_URL + "/scorm",
+        method: "POST",
+        data: {
+            sourceFolderName: uniqueName,
+        },
+        responseType: "arraybuffer",
+        headers: { Accept: "application/zip" },
+    };
+
+    axios(options)
+        .then((response) => {
+                const blob = new Blob([response.data], { type: "application/zip" });
+                const link = document.createElement("a");
+                link.href = window.URL.createObjectURL(blob);
+                link.download = uniqueName; 
+                link.click();
+            })
+            .catch((error) => {
+                console.error("Error downloading SCORM package:", error);
+            });
+};
 
 onMounted(() => {
   updateThumbnails();
@@ -135,11 +176,6 @@ const updateThumbnails = () => {
       }
     });
 };
-
-let fileWithEx = "";
-let videoUrl = "";
-let uniqueName = "";
-let videoName = "";
 const sendFile = async () => {
   const myFiles = file.value.files;
   const formData = new FormData();
@@ -161,21 +197,6 @@ const sendFile = async () => {
   });
 };
 
-const open = () => {
-  ElMessage({
-    showClose: true,
-    message: '動画変換が完了しました',
-    type: 'success',
-  })
-}
-const error_message = () => {
-  ElMessage({
-    showClose: true,
-    message: "予期せぬエラーが発生しました。ブラウザをリフレッシュして動画を再アップロードしてください。",
-    type: 'error',
-  })
-}
-
 const setVideo = (videoUrl, uniqueName, videoName) => {
   previewUrl.value = videoUrl;
   sourceFolder.value = uniqueName;
@@ -184,8 +205,8 @@ const setVideo = (videoUrl, uniqueName, videoName) => {
   scrollUp()
 };
 
-const setPreviewVideo = (videoUrl) =>{
-  previewUrl.value = videoUrl;
+const setPreviewVideo = ({videoUrl, uniqueName, videoName}) =>{
+  setVideo(videoUrl, uniqueName, videoName)
 }
 
 const scrollUp = () => {
