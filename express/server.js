@@ -384,40 +384,39 @@ const orderReccentFiles = (dir) => {
 };
 
 //SCORMパッケージのプロパティを設定
-app.post("/scormProperty", function (req, res) {
-    scormName = req.body.scormName;
-    sourceFolder = req.body.sourceFolder;
-
-    sourcePath = "./public/transcoded/" + sourceFolder
-
-    console.log(scormName);
-    res.send({ success: true });
-});
-
-//SCORMパッケージ作成　ZIPファイル作成
 app.post("/scorm", function (req, res) {
+    let sourceFolderName = req.body.sourceFolderName;
+
+    let sourcePath = "./public/transcoded/" + sourceFolderName
+    console.log("asdf", sourceFolderName)
+
     scopackager({
         version: '2004 4th Edition',
         organization: 'Chiba University',
-        title: scormName,
+        title: sourceFolderName,
         language: 'fr-FR',
         identifier: '00',
         masteryScore: 80,
         startingPage: 'index.html',
         source: sourcePath,
         package: {
-            name: scormName,
+            name: sourceFolderName,
             zip: true,
             outputFolder: './scormPackages'
         }
     }, function (msg) {
         console.log(msg);
-        const pathToZip = "./scormPackages/" + getMostRecentFile("./scormPackages").file;
-        console.log("pathToZip", pathToZip);
-        res.download(pathToZip);
 
+
+        let version = "v1.0.0"; 
+        let date = new Date().toISOString().split('T')[0]; 
+
+        // Construct the expected filename
+        const expectedFileName = sourceFolderName + "_" + version + "_" + date + ".zip";
+        const pathToZip = "./scormPackages/" + expectedFileName;
+        res.download(pathToZip, sourceFolderName + ".zip");
     });
-})
+});
 
 app.listen(PORT, () => {
     console.log(`Express app listening on port ${PORT}`)

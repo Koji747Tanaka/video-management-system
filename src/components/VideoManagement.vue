@@ -155,9 +155,7 @@ const sendFile = async () => {
   };
 
   axios(options).then((res) => {
-    // console.log("response is here ", res.data);
     const {uniqueName, videoUrl, videoName} = res.data
-    // console.log("uniqueName", uniqueName)
     updateThumbnails();
     setVideo(videoUrl, uniqueName, videoName);
   });
