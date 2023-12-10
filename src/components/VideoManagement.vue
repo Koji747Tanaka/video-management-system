@@ -67,7 +67,7 @@
     <v-row class="pl-6">
       <template v-for="video in videos">
         <v-col cols="4">
-          <ThumbnailCard :video="video"/>
+          <ThumbnailCard :video="video" @setPreviewVideo="setPreviewVideo"/>
         </v-col>
       </template>
       
@@ -159,46 +159,6 @@ const sendFile = async () => {
     updateThumbnails();
     setVideo(videoUrl, uniqueName, videoName);
   });
-
-
-
-
-  // axios.post(BASE_URL + "/convert", formData).then((res) => {
-  //   console.log({ res });
-  //   if (res.data.success == true) {
-  //     axios.get(BASE_URL + "/ffmpeg").then((res) => {
-  //       if (res.data.success == true) {
-  //         open()
-
-  //         console.log("ffmpeg res is here", res.data);
-  //         const options = {
-  //           url: BASE_URL + "/videoDatabase",
-  //           method: "POST",
-  //           data: {
-  //             userID: authStore.$state.userid,
-  //             videoName: res.data.videoName,
-  //             uniqueName: res.data.uniqueName,
-  //           },
-  //         };
-  //         fileWithEx = "/" + res.data.uniqueName + ".m3u8";
-  //         videoUrl = res.data.videoUrl + res.data.uniqueName + fileWithEx;
-  //         uniqueName = res.data.uniqueName;
-  //         console.log("before res.data video")
-  //         videoName = res.data.videoName;
-
-  //         console.log("after res.data video")
-  //         axios(options).then((res) => {
-  //           console.log("response is here ", res.data);
-  //           updateThumbnails();
-  //           setVideo(videoUrl, uniqueName, videoName);
-  //         });
-
-  //       } else {
-  //         error_message()
-  //       }
-  //     });
-  //   }
-  // });
 };
 
 const open = () => {
@@ -214,53 +174,19 @@ const error_message = () => {
     message: "予期せぬエラーが発生しました。ブラウザをリフレッシュして動画を再アップロードしてください。",
     type: 'error',
   })
-
-  // ElMessage("予期せぬエラーが発生しました。ブラウザをリフレッシュして動画を再アップロードしてください。")
 }
-const scormDownload = () => {
-  const options = {
-    url: BASE_URL + "/scormProperty",
-    method: "POST",
-    data: {
-      scormName: folderNameZip.value,
-      sourceFolder: sourceFolder.value,
-    },
-  };
-
-  axios(options).then((res) => {
-    // console.log("res data success here", res.data.success);
-    if (res.data.success) {
-      axios
-        .post(BASE_URL + "/scorm", {
-          responseType: "arraybuffer",
-          headers: { Accept: "application/zip" },
-        })
-        .then((res) => {
-          var file = res;
-          // console.log(res);
-          const blob = new Blob([file], { type: "application/zip" });
-          const uri = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.download = folderNameZip.value;
-          link.href = uri;
-          link.click();
-        });
-    } else {
-      console.log("Scorm property root has a problem");
-    }
-  });
-};
 
 const setVideo = (videoUrl, uniqueName, videoName) => {
-  // console.log(videoUrl);
-  // console.log(videoName);
   previewUrl.value = videoUrl;
   sourceFolder.value = uniqueName;
   folderNameZip.value = videoName;
   previewName.value = videoName;
-
   scrollUp()
 };
+
+const setPreviewVideo = (videoUrl) =>{
+  previewUrl.value = videoUrl;
+}
 
 const scrollUp = () => {
   window.scrollTo({
