@@ -35,7 +35,8 @@ const logout = () => {
       </v-toolbar-items>
     </v-app-bar>
     <v-main>
-      <router-view />
+      <component :is="$route.meta.layout" v-if="$route.meta.layout"></component>
+      <router-view v-else></router-view>
     </v-main>
 </v-app>
 </template>

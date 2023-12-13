@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { userAuthStore } from "./store/auth.store.js";
+import UploaderLayout from "./components/layouts/UploaderLayout.vue"
 
 const routes = [
     {
@@ -22,6 +23,7 @@ const routes = [
         name: 'video',
         component: () => import("./components/VideoManagement.vue"),
         meta: {
+            layout: UploaderLayout,
             requiresAuth: true, 
         }
     }
