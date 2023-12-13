@@ -94,8 +94,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted, watch } from "vue";
 import axios from "axios";
+import io from 'socket.io-client';
 import { userAuthStore } from "../store/auth.store.js";
 import ThumbnailCard from "./ThumbnailCard.vue";
 import Preview from "./Preview.vue";
@@ -110,6 +111,7 @@ let videoFullList = ref([]);
 const previewUrl = ref("");
 const folderNameZip = ref("");
 const search = ref("");
+const socket = io(BASE_URL);
 const progressValue = ref(0);
 
 const scormDownload = (uniqueName) => {
@@ -138,7 +140,19 @@ const scormDownload = (uniqueName) => {
 
 onMounted(() => {
   updateThumbnails();
+
+  socket.on('connect', () => {
+        console.log('Connected to the server');
+      });
+      socket.on('progressUpdate', (data) => {
+        progressValue.value = data.progress;
+      });
 });
+
+onUnmounted(() => {
+  socket.disconnect();
+});
+
 const searchVideo = () => {
   if (search.value != "") {
     videos.value = [];
@@ -191,9 +205,19 @@ const sendFile = async () => {
   };
 
   axios(options).then((res) => {
-    const {uniqueName, videoUrl, videoName} = res.data
-    updateThumbnails();
-    setVideo(videoUrl, uniqueName, videoName);
+    const {success} = res.data
+    if (success === true){
+      updateThumbnails();
+      
+
+      setTimeout(() => {
+        progressValue.value =0
+      }, 1000);
+    }
+    else{
+      console.log("Error")
+    }
+    
   });
 };
 

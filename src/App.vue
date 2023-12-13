@@ -3,7 +3,7 @@ import axios from "axios";
 import { userAuthStore } from "./store/auth.store.js";
 const authStore = userAuthStore();
 // const BASE_URL = "https://13.230.214.179:3000";
-const BASE_URL = import.meta.env.SERVER_URL;
+const BASE_URL = import.meta.env.VITE_SERVER_URL;
 const logout = () => {
   authStore.clearUser();
   const options = {

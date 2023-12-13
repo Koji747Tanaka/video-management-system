@@ -1,4 +1,6 @@
 require('dotenv').config();
+const { saveFile, generateUniqueName } = require('./helpers/fileHandler');
+const { processVideo, takeScreenshot } = require('./helpers/ffmpegHandler');
 const express = require("express");
 const fileUpload = require('express-fileupload');
 const bodyParser = require("body-parser");
@@ -15,14 +17,13 @@ var flash = require('connect-flash');
 const SECRET_KEY = process.env.ACCESS_TOKEN_SECRET
 const expiresIn = '180min'
 const ffmpeg = require('./ffmpeg');
-// const shortid = require('shortid');
-
-const PORT = 3000;
+const PORT = 3001;
 const app = express();
 const videoUrl = process.env.SERVER_HOST + "/transcoded/"
 
-var dirReceived = './received';
-var dirTranscoded = './public/transcoded';
+
+let dirReceived = './received';
+let dirTranscoded = './public/transcoded';
 let dirThumbnails = './public/thumbnails'
 const mkNonDir = (dir) => {
     if (!fs.existsSync(dir)) {
@@ -31,10 +32,27 @@ const mkNonDir = (dir) => {
         )
     }
 }
-
 mkNonDir(dirReceived)
 mkNonDir(dirTranscoded)
 mkNonDir(dirThumbnails)
+
+
+const server = require('http').Server(app);
+const io = require('socket.io')(server, {
+    cors: {
+        origin: process.env.CLIENT_HOST,
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});
+app.io = io;
+
+io.on('connection', (socket) => {
+    console.log('A user connected');
+    socket.on('disconnect', () => {
+        console.log('User disconnected');
+    });
+});
 
 app.use(bodyParser.urlencoded({
     extended: true
@@ -42,7 +60,7 @@ app.use(bodyParser.urlencoded({
 app.use(flash());
 app.use(cookieParser());
 app.use(bodyParser.json());
-app.use(cors({ credentials: true, origin: process.env.CLIENT_HOST })); //http://localhost:15173/register process.env.CLIENT_HOST
+app.use(cors({ credentials: true, origin: process.env.CLIENT_HOST })); 
 app.use(express.static(__dirname + '/public'));
 
 mongoose.connect("mongodb://mongodb:27017", {
@@ -81,6 +99,20 @@ function verifyToken(token) {
 
 app.get("/", function (req, res) {
     res.sendFile(__dirname + '/index.html');
+})
+
+app.get('/login', async (req, res) => {
+    const jwt = req.cookies.JWTcookie;
+    const {user_id, username} = await validateUser(jwt)
+    if (user_id){
+        const responseJson = {
+            userID: user_id,
+            username: username,
+        }
+        res.status(200).json(responseJson)
+    }else{
+        res.status(400).json({status: false})
+    }
 })
 
 app.post("/login", function (req, res) {
@@ -135,20 +167,7 @@ try {
     }
 };
 
-app.get('/login', async (req, res) => {
-    const jwt = req.cookies.JWTcookie;
-    const {user_id, username} = await validateUser(jwt)
-    if (user_id){
-        const responseJson = {
-            user_id: user_id,
-            username: username,
-        }
-        res.status(200).json(responseJson)
-    }else{
-        console.log("no")
-        res.status(400).json({status: false})
-    }
-})
+
 
 app.get("/logout", function (req, res) {
     res.cookie('JWTcookie', "deleted", { maxAge: 0, httpOnly: true });
@@ -181,14 +200,7 @@ app.post("/register", (req, res) => {
 })
 let receivedName = "";
 
-function generateAlphabeticId(length) {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return result;
-}
+
 
 app.post("/convert", fileUpload({ createParentPath: true }), async function (req, res) {
     const jwt = req.cookies.JWTcookie;
@@ -197,103 +209,42 @@ app.post("/convert", fileUpload({ createParentPath: true }), async function (req
         res.send({ success: false })
         return
     }
-    mkNonDir(dirReceived);
+
     receivedName = Object.keys(req.files)[0];
-    const videoName = receivedName.substring(0, receivedName.indexOf("."));
-    const radom = generateAlphabeticId(8);
-    const uniqueName = videoName + radom;
+    const {uniqueName} = generateUniqueName(receivedName)
     const receivedFile = req.files[receivedName];
+    const filePath = `./received/${receivedName}`;
+    await saveFile(filePath, receivedFile["data"]);
     transcodedSegFolder = `./public/transcoded/${uniqueName}`;
     mkNonDir(transcodedSegFolder);
+    const ffmpegFilePath = `./received/${receivedName}`
+    const thumbnailOutputFolder = './public/thumbnails'
+    const ffmpegOutputPath = `${transcodedSegFolder}/${uniqueName}.m3u8`;
 
-    fs.open(`./received/${receivedName}`, 'w', (err, fd) => {
-        if (err) throw err;
-        fs.writeFile(fd, receivedFile["data"], function (err) {
-            if (err) {
-                return console.log("Err in write file ", err);
-            }
-            console.log("The file was saved!", receivedName);
-            fs.close(fd, (err) => {
-                if (err) throw err;
-            });
-        });
-    });
-    // ffmpeg conversion
-    const ffmpegFile = `./received/${receivedName}`
-    ffmpeg()
-        .input(ffmpegFile)
-        .takeScreenshots(
-            {
-                count: 1,
-                timemarks: ['00:00:01.000'],
-                folder: './public/thumbnails',
-                filename: uniqueName
-            }).on('error', function (err) {
-                console.log('screenshot error happened: ' + err.message);
-            }).on('end', function (err) {
-                console.log('Screenshot process finished: ');
-            });
+    try{
+        await takeScreenshot(ffmpegFilePath, thumbnailOutputFolder, uniqueName)
+        await processVideo(ffmpegFilePath, ffmpegOutputPath, req.app.io, uniqueName);  
             
-    ffmpeg(ffmpegFile)
-        .addOptions([
-            '-profile:v baseline',
-            '-level 3.0',
-            '-start_number 0',
-            '-hls_time 10',
-            '-hls_list_size 0',
-            '-f hls'
-        ])
-        .audioCodec('libmp3lame')
-        .videoCodec('libx264')
-        .audioBitrate(128)
-        .on('progress', function (progress) {
-            console.log('Processing: ' + progress.percent + '% done')
-            let progressCompleted = progress.percent;
-            console.log("percentCompleted", progress.percent)
-
-        })
-        .on('end', function () {
-            console.log('file has been converted succesfully')
-            const filenames = fs.readdirSync(`${transcodedSegFolder}`)
-            filenames.forEach((filename) => {
-                const folderWithFile = uniqueName + "/" + filename
-                const filePath = `${transcodedSegFolder}` + "/" + filename
-            })
-        })
-        .on('error', function (err) {
-            console.log('converting error happened: ' + err.message);
-            res.send({ success: false })
-            return
-        })
-        .save(`${transcodedSegFolder}/${uniqueName}.m3u8`);
-        
-        // database
         const newVideo = new Video({
             userid: user_id,
-            videoName: videoName,
+            videoName: receivedName.split('.')[0],
             uniqueName: uniqueName
         });
-        console.log(newVideo)
+        await newVideo.save();
+        res.send({ success: true})
 
-        newVideo.save((error, video) => {
-            if (error) {
-                if (error.code === 11000) {
-                    res.json({ status: 'error', error: 'Username already in use.' });
-                    return
-                }
-                throw error;
-            } else {
-                console.log("successfully saved.");
-            }
-        });
-
-
-    res.send({ success: true, uniqueName: uniqueName, videoUrl: videoUrl, videoName: videoName })
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).send({ success: false, message: 'Internal Server Error' });
+    }
 })
 
 app.get("/videoThumbnails", function (req, res) {
     let usersFiles = [];
     let usersVideoNames = [];
+
+
     Video.find({ userid: req.query.userID }, function (err, foundVideoArray) {
         if (err) {
             console.log(err);
@@ -335,18 +286,6 @@ app.get("/videoThumbnails", function (req, res) {
     });
 })
 
-//最新で作成されたファイル
-const getMostRecentFile = (dir) => {
-    const files = orderReccentFiles(dir);
-    return files.length ? files[0] : undefined;
-};
-const orderReccentFiles = (dir) => {
-    return fs.readdirSync(dir)
-        .filter(file => fs.lstatSync(path.join(dir, file)).isFile())
-        .map(file => ({ file, mtime: fs.lstatSync(path.join(dir, file)).mtime }))
-        .sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
-};
-
 //SCORMパッケージのプロパティを設定
 app.post("/scorm", function (req, res) {
     let sourceFolderName = req.body.sourceFolderName;
@@ -382,8 +321,11 @@ app.post("/scorm", function (req, res) {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`Express app listening on port ${PORT}`)
-})
+// app.listen(PORT, () => {
+//     console.log(`Express app listening on port ${PORT}.`)
+// })
 
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
 
