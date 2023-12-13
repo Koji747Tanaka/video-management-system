@@ -19,5 +19,6 @@ export default {
     processing_message: "In Progress",
     search: "Search",
     download_scorm: "Download the scorm package",
-    preview_lect: "Preview the lecture"
+    preview_lect: "Preview the lecture",
+    delete_video: "Delete the lecture"
 }

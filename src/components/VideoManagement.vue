@@ -65,7 +65,7 @@
         
       </v-col>
       <v-col cols="6" >
-        <Preview :videoUrl="previewUrl" :previewName="previewName" :uniqueName="sourceFolder" @downloadScorm="scormDownload"/>
+        <Preview :videoUrl="previewUrl" :previewName="previewName" :uniqueName="sourceFolder" @downloadScorm="scormDownload" @deleteVideo="deleteVideo"/>
       </v-col>
     </v-row>
     <v-divider class="mt-16" :thickness="3"></v-divider>
@@ -115,6 +115,7 @@ const socket = io(BASE_URL);
 const progressValue = ref(0);
 
 const scormDownload = (uniqueName) => {
+  console.log("this whould nto work")
     const options = {
         url: BASE_URL + "/scorm",
         method: "POST",
@@ -138,6 +139,28 @@ const scormDownload = (uniqueName) => {
             });
 };
 
+const deleteVideo = (uniqueName) =>  {
+  console.log("aaaaaaaaaaa", uniqueName)
+  const options = {
+        url: BASE_URL + "/delete",
+        method: "DELETE",
+        data: {
+            videoName: uniqueName,
+        }
+    };
+
+    axios(options)
+        .then((response) => {
+          console.log(response)
+                if(response.data.success == true){
+                  console.log("updatethubm")
+                  updateThumbnails()
+                }
+            })
+            .catch((error) => {
+                console.error("Error deleting", error);
+            });
+}
 onMounted(() => {
   updateThumbnails();
 
@@ -242,29 +265,5 @@ const scrollUp = () => {
 </script>
 
 <style>
-.el-row {
-  margin-bottom: 20px;
-}
 
-.videoDiv {
-  cursor: pointer;
-}
-
-.round-image {
-  border-radius: 10%;
-}
-
-.bottom-line {
-  border-bottom: 2px dashed #dcdcdc;
-}
-
-.message {
-  color: #808080
-}
-
-.fixed-button {
-  position: fixed;
-  bottom: 60px;
-  right: 60px;
-}
 </style>
