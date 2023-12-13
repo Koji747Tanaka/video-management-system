@@ -1,32 +1,28 @@
 <template>
   <v-card>
     <div class="text-center">
-    <video id="video" class="video-container mt-5" controls playsinline loop></video>
-    <v-row class="mt-1 mb-1">
-      <v-col class="ml-10" cols="6">
-        <div class="text-left">
-          {{ previewName }}
-        </div>
-      </v-col>
-      <v-col  class="ml-7">
-        <v-tooltip :text="$t('delete_video')" location="top">
-          <template v-slot:activator="{ props }">
-              <v-btn v-bind="props" @click="deleteVideo">DELETE</v-btn>
-          </template>
-        </v-tooltip>  
-      </v-col>
-      <v-col>
-        <div class="text-right mr-9" >
-        <v-tooltip :text="$t('download_scorm')" location="top">
-          <template v-slot:activator="{ props }">
-              <v-btn v-bind="props" @click="downloadScorm">DOWNLOAD</v-btn>
-          </template>
-        </v-tooltip>
-      </div>
-      </v-col>
-    </v-row>
-  </div>
-  </v-card>
+      <video id="video" class="video-container mt-5" controls playsinline loop></video>
+      <v-row class="mt-1 mb-1">
+        <v-col class="ml-10" cols="7">
+          <div class="text-left">
+            Lecture: {{ previewName }}
+          </div>
+        </v-col>
+        <v-col cols="4" class="d-flex justify-end pr-7">
+          <v-tooltip :text="$t('delete_video')" location="top">
+            <template v-slot:activator="{ props }">
+              <v-btn v-bind="props" @click="deleteVideo" class="mr-2" color="pink">DELETE</v-btn>
+            </template>
+          </v-tooltip>
+          <v-tooltip :text="$t('download_scorm')" location="top">
+            <template v-slot:activator="{ props }">
+              <v-btn v-bind="props" @click="downloadScorm" color="primary">DOWNLOAD</v-btn>
+            </template>
+          </v-tooltip>
+        </v-col>
+      </v-row>
+    </div>
+</v-card>
   
 </template>
 

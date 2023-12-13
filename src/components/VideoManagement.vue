@@ -91,6 +91,20 @@
     </v-row>
   </v-container>
 
+  <v-dialog v-model="showDialog" persistent max-width="300px">
+  <v-card>
+    <v-card-title class="headline">Confirm Delete</v-card-title>
+    <v-card-text>
+      Are you sure you want to delete this video?
+    </v-card-text>
+    <v-card-actions>
+      <v-spacer></v-spacer>
+      <v-btn color="green darken-1" text @click="showDialog = false">Cancel</v-btn>
+      <v-btn color="green darken-1" text @click="confirmDelete">Delete</v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
+
 </template>
 
 <script setup>
@@ -113,9 +127,11 @@ const folderNameZip = ref("");
 const search = ref("");
 const socket = io(BASE_URL);
 const progressValue = ref(0);
+const showDialog = ref(false);
+const nameToDelete = ref(null);
+
 
 const scormDownload = (uniqueName) => {
-  console.log("this whould nto work")
     const options = {
         url: BASE_URL + "/scorm",
         method: "POST",
@@ -138,34 +154,37 @@ const scormDownload = (uniqueName) => {
                 console.error("Error downloading SCORM package:", error);
             });
 };
+const deleteVideo = (uniqueName) => {
+  nameToDelete.value = uniqueName;
+  showDialog.value = true;
+};
 
-const deleteVideo = (uniqueName) =>  {
-  console.log("aaaaaaaaaaa", uniqueName)
+const confirmDelete = () => {
   const options = {
-        url: BASE_URL + "/delete",
-        method: "DELETE",
-        data: {
-            videoName: uniqueName,
-        }
-    };
+    url: BASE_URL + "/delete",
+    method: "DELETE",
+    data: {
+      videoName: nameToDelete.value,
+    }
+  };
 
-    axios(options)
-        .then((response) => {
-          console.log(response)
-                if(response.data.success == true){
-                  console.log("updatethubm")
-                  updateThumbnails()
-                }
-            })
-            .catch((error) => {
-                console.error("Error deleting", error);
-            });
-}
+  axios(options)
+    .then((response) => {
+      if(response.data.success == true){
+        updateThumbnails();
+      }
+      showDialog.value = false; // Close the dialog
+    })
+    .catch((error) => {
+      console.error("Error deleting", error);
+    });
+};
+
 onMounted(() => {
   updateThumbnails();
 
   socket.on('connect', () => {
-        console.log('Connected to the server');
+        // console.log('Connected to the server');
       });
       socket.on('progressUpdate', (data) => {
         progressValue.value = data.progress;

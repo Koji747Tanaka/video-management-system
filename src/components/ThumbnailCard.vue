@@ -7,10 +7,10 @@
             </v-col>
         </v-row>
         <v-row class="pt-3 pb-3">
-            <v-col>
+            <v-col class="d-flex justify-end">
                 <v-tooltip :text="$t('preview_lect')" location="top">
                     <template v-slot:activator="{ props }">
-                        <v-btn v-bind="props" @click="
+                        <v-btn v-bind="props" color="indigo" class="mr-2" @click="
                             setVideo(
                                 videoUrl,
                                 uniqueName,
@@ -19,14 +19,13 @@
                             ">Preview</v-btn>
                     </template>
                 </v-tooltip>
-            </v-col>
-            <v-col>
                 <v-tooltip :text="$t('download_scorm')" location="top">
                     <template v-slot:activator="{ props }">
-                        <v-btn v-bind="props" @click="downloadScorm">Download</v-btn>
+                        <v-btn v-bind="props" color="primary" class="mr-2" @click="downloadScorm">Download</v-btn>
                     </template>
                 </v-tooltip>
             </v-col>
+        
         </v-row>
     </v-card>
 </template>
