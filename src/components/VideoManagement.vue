@@ -64,7 +64,7 @@
         </v-row>
         
       </v-col>
-      <v-col cols="6" >
+      <v-col cols="6" class="pr-6">
         <Preview :videoUrl="previewUrl" :previewName="previewName" :uniqueName="sourceFolder" @downloadScorm="scormDownload" @deleteVideo="deleteVideo"/>
       </v-col>
     </v-row>
@@ -81,7 +81,7 @@
       ></v-text-field>
       </v-col>
     </v-row>
-    <v-row class="pl-2">
+    <v-row class="pl-2 pr-6">
       <template v-for="video in videos">
         <v-col cols="4">
           <ThumbnailCard :video="video" @setPreviewVideo="setPreviewVideo" @downloadScorm="scormDownload"/>
