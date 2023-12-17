@@ -162,16 +162,16 @@ app.post("/convert", fileUpload({ createParentPath: true }), async function (req
     const ffmpegOutputPath = `${transcodedSegFolder}/${uniqueName}.m3u8`;
 
     try {
-        await takeScreenshot(ffmpegFilePath, thumbnailOutputFolder, uniqueName)
-        await processVideo(ffmpegFilePath, ffmpegOutputPath, req.app.io, uniqueName);
+        takeScreenshot(ffmpegFilePath, thumbnailOutputFolder, uniqueName)
+        processVideo(ffmpegFilePath, ffmpegOutputPath, req.app.io, uniqueName);
 
         const newVideo = new Video({
             userid: user_id,
             videoName: receivedName.split('.')[0],
             uniqueName: uniqueName
         });
-        await newVideo.save();
-        res.send({ success: true })
+        newVideo.save();
+        res.send({ success: true, message: 'Video processing started' });
 
     }
     catch (error) {

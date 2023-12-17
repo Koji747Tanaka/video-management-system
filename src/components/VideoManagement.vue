@@ -81,7 +81,7 @@
       ></v-text-field>
       </v-col>
     </v-row>
-    <v-row class="pl-2 pr-6">
+    <v-row class="pl-2 pr-3">
       <template v-for="video in videos">
         <v-col cols="4">
           <ThumbnailCard :video="video" @setPreviewVideo="setPreviewVideo" @downloadScorm="scormDownload"/>
@@ -130,6 +130,14 @@ const progressValue = ref(0);
 const showDialog = ref(false);
 const nameToDelete = ref(null);
 
+watch(progressValue, async(newVal, oldVal) =>{
+  if (newVal == 100){
+    updateThumbnails();
+    setTimeout(() => {
+      progressValue.value =0
+    }, 1000)
+  }
+})
 
 const scormDownload = (uniqueName) => {
     const options = {
@@ -248,18 +256,12 @@ const sendFile = async () => {
 
   axios(options).then((res) => {
     const {success} = res.data
-    if (success === true){
-      updateThumbnails();
-      
-
-      setTimeout(() => {
-        progressValue.value =0
-      }, 1000);
-    }
-    else{
+    if (success != true){
       console.log("Error")
     }
-    
+    // else{
+    //   console.log(res.data.message)
+    // }
   });
 };
 
