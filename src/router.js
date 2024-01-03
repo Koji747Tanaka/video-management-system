@@ -1,6 +1,8 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHashHistory } from 'vue-router';
 import { userAuthStore } from "./store/auth.store.js";
 import UploaderLayout from "./components/layouts/UploaderLayout.vue"
+const BASE_URL = import.meta.env.VITE_SERVER_URL;
+import axios from "axios";
 
 const routes = [
     {
@@ -39,24 +41,27 @@ const routes = [
 ]
 
 const router = createRouter({
-    history: createWebHistory(),
-    routes,
+    history: createWebHashHistory(),
+    routes
 })
 
 router.beforeEach((to, from, next) => {
     if (to.matched.some(record => record.meta.requiresAuth)) {
-        const authStore = userAuthStore();
-        if (!authStore.isLogin) {
-            next({
-                path: '/',
-                query: {
-                    redirect: to.fullPath
-                }
-            })
-        } else {
-            next();
-        }
-    } else {
+            const authStore = userAuthStore();
+            axios.get(BASE_URL + '/login', { withCredentials: true })
+                .then((res) => {
+                    const username = res.data.username;
+                    const user_id = res.data.userID;
+                    authStore.auth();
+                    authStore.setUser(user_id, username);
+                    next();
+                    })
+                .catch((error) => {
+                    console.error('Error fetching user information:', error);
+                    router.push({ name: 'login' })
+                });
+            }
+    else {
         next();
     }
 });
