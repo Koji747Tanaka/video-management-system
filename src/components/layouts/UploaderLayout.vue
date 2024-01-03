@@ -1,7 +1,7 @@
 <template>
     <v-card>
         <v-layout>
-            <v-navigation-drawer expand-on-hover="true" permanent v-model="drawer" :rail="rail" color="teal">
+            <v-navigation-drawer expand-on-hover permanent v-model="drawer" :rail="rail" color="teal">
                 <v-list nav>
                     <v-list-item prepend-icon="mdi-cog" title="Video Management">
                     </v-list-item>
@@ -10,7 +10,7 @@
                         <v-list-item :to="{ name: 'video' }" prepend-icon="mdi-download" title="Get SCORM" value="upload">
                         </v-list-item>
                     </div>
-                    <v-list-item :to="{ name: 'preview' }" prepend-icon="mdi-movie" title="Prepare Broadcast" value="preview">
+                    <v-list-item :to="{ name: 'upload' }" prepend-icon="mdi-movie" title="Prepare Broadcast" value="preview">
                     </v-list-item>
                 </v-list>
             </v-navigation-drawer>

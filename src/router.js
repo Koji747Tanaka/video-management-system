@@ -26,6 +26,15 @@ const routes = [
             layout: UploaderLayout,
             requiresAuth: true, 
         }
+    },
+    {
+        path: '/upload',
+        name: 'upload',
+        component: () => import("./components/Uploader.vue"),
+        meta: {
+            layout: UploaderLayout,
+            requiresAuth: true, 
+        }
     }
 ]
 

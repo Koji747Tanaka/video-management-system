@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid>
+  <v-container fluid style="min-height: 100vh;">
     <v-row class="text-left mt-5 pl-2">
       <v-col cols="6" >
         <v-row>

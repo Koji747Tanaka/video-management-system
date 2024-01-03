@@ -118,7 +118,6 @@ app.get("/logout", function (req, res) {
 })
 
 app.post("/register", (req, res) => {
-    console.log("working")
     const newUser = new User({
         username: req.body.username,
         password: md5(req.body.password)
@@ -130,7 +129,7 @@ app.post("/register", (req, res) => {
             }
             throw error;
         } else {
-            const accessToken = createToken(user.id, user.username);
+            const accessToken = generateAccessToken(user.id, user.username);
             const responseJson = {
                 success: true,
                 username: user.username,
