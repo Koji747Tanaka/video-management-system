@@ -7,10 +7,9 @@ const expiresIn = '180min'
 
 const validateUser = async (JWT) => {
     try {
-        console.log("secret",SECRET_KEY)
         const decoded = jwt.verify(JWT, SECRET_KEY);
         const userID = decoded.id;
-        const foundUser = await User.findOne({ id: userID }).exec();
+        const foundUser = await User.findOne({ id: userID });
         if (foundUser) {
             const username = foundUser.username
             const user_id = foundUser.id
@@ -18,7 +17,8 @@ const validateUser = async (JWT) => {
         } else {
             return false;
         }
-    } catch (err) {
+    } 
+    catch (err) {
         console.log("Unauthorized");
         return false;
     }

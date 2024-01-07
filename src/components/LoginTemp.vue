@@ -82,20 +82,20 @@ const BASE_URL = import.meta.env.VITE_SERVER_URL;
 
 const goTo = computed(() => isLogin.value ? '/register': '/')
 
-onMounted(() => {
-    const authStore = userAuthStore();
-    axios.get(BASE_URL + '/login', { withCredentials: true })
-        .then((res) => {
-            const username = res.data.username;
-            const user_id = res.data.userID;
-            authStore.auth();
-            authStore.setUser(user_id, username);
-            router.push("/video");
-            })
-        .catch((error) => {
-            console.error('Error fetching user information:', error);
-        });
-    });
+// onMounted(() => {
+//     const authStore = userAuthStore();
+//     axios.get(BASE_URL + '/login', { withCredentials: true })
+//         .then((res) => {
+//             const username = res.data.username;
+//             const user_id = res.data.userID;
+//             authStore.auth();
+//             authStore.setUser(user_id, username);
+//             router.push("/video");
+//             })
+//         .catch((error) => {
+//             console.error('Error fetching user information:', error);
+//         });
+//     });
 
 const form = ref(null);
 const visible = ref(false);

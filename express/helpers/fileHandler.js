@@ -24,7 +24,7 @@ function generateAlphabeticId(length) {
     return result;
 }
 
-function generateUniqueName(originalName) {
+const generateUniqueName =(originalName) => {
     const videoName = originalName.substring(0, originalName.indexOf("."));
     const random = generateAlphabeticId(8); 
     const uniqueName = videoName + random;

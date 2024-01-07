@@ -38,6 +38,7 @@
     "util": "^0.12.5"
   },
   "devDependencies": {
+    "jest": "^29.7.0",
     "nodemon": "^2.0.20"
   }
 }
